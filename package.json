@@ -14,7 +14,7 @@
     "nodemon": "^2.0.6"
   },
   "dependencies": {
-    "@diablorun/diablorun-data": "github:DiabloRun/diablorun-data#0.1.0",
+    "@diablorun/diablorun-data": "github:DiabloRun/diablorun-data#0.1.1",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
