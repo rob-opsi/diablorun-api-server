@@ -1,0 +1,12 @@
+ALTER TABLE users ADD speedrun_id text UNIQUE;
+ALTER TABLE users ADD speedrun_url text;
+ALTER TABLE users ADD country_code text;
+ALTER TABLE users ADD dark_color_from text;
+ALTER TABLE users ADD dark_color_to text;
+ALTER TABLE users ADD light_color_from text;
+ALTER TABLE users ADD light_color_to text;
+ALTER TABLE users ADD twitch_url text;
+ALTER TABLE users ADD twitch_id text UNIQUE;
+ALTER TABLE users ADD profile_image_url text;
+ALTER TABLE users ADD offline_image_url text;
+ALTER TABLE users ADD patreon_id text;
