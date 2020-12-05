@@ -476,7 +476,7 @@ module.exports = async function (body) {
     }
   } catch (err) {
     console.log('ERROR!');
-    console.log(JSON.stringify(JSON.parse(body), null, 2));
+    console.log(JSON.stringify(body, null, 2));
     console.log(err);
     console.log(err.stack);
 

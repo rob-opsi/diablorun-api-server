@@ -107,6 +107,33 @@ async function getLastUpdatedCharacter(userId) {
   return await getCharacterSnapshot(lastUpdatedCharacter.rows[0].id);
 }
 
+// Get currently active users
+router.get('/active-users', async function (req, res) {
+  const db = await getDbClient();
+  const time = Math.floor(Date.now()/1000) - 60;
+
+  const { rows } = await db.query(`
+    WITH active_characters AS (
+      SELECT
+          user_id, hero, level, difficulty, area,
+          ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY update_time DESC) as user_index
+      FROM characters WHERE update_time > $1
+    )
+
+    SELECT
+      users.id,
+      users.name AS user_name,
+      users.country_code AS user_country_code,
+      users.dark_color_from AS user_color,
+      users.profile_image_url AS user_profile_image_url,
+      active_characters.* FROM active_characters
+    INNER JOIN users ON users.id = active_characters.user_id
+    WHERE active_characters.user_index=1 ORDER BY user_name;
+  `, [time]);
+
+  res.json(rows);
+});
+
 // Get user by name and return their last updated character
 router.get('/users/:name', async function (req, res) {
   const user = await getUserByName(req.params.name);
