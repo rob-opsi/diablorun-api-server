@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const users = require('./users');
 const characters = require('./characters');
+const home = require('./home');
 const races = require('./races');
 const speedruns = require('./speedruns');
 const webhooks = require('./webhooks');
@@ -22,6 +23,7 @@ app.post('/update', async function (req, res) {
 
 app.use(users.router);
 app.use(characters.router);
+app.use(home.router);
 app.use(races.router);
 app.use(speedruns.router);
 app.use(webhooks.router);
