@@ -6,8 +6,8 @@ const router = new Router();
 
 // Get recent speedruns
 router.get('/home', async function (req, res) {
-    const db = await getDbClient();
-    const latestSpeedruns = await db.query(`
+  const db = await getDbClient();
+  const latestSpeedruns = await db.query(`
     WITH pb_runs AS (
         SELECT
             *,
@@ -56,7 +56,7 @@ router.get('/home', async function (req, res) {
         ORDER BY runs.run_time DESC
       LIMIT 10  
     `);
-    const latestRecords = await db.query(`
+  const latestRecords = await db.query(`
     WITH pb_runs AS (
         SELECT
             *,
@@ -105,10 +105,49 @@ router.get('/home', async function (req, res) {
       WHERE runs.category_rank=1 ORDER BY runs.run_time DESC
       LIMIT 10  
     `);
-        res.json({
-            latestSpeedruns: latestSpeedruns.rows,
-            latestRecords: latestRecords.rows
-        });
+  const mostMedals = await db.query(`
+    WITH pb_runs AS (
+      SELECT
+          *,
+          ROW_NUMBER() OVER(PARTITION BY speedrun_user_id, category_id, players_category, hc, hero ORDER BY seconds_played ASC) AS personal_rank
+      FROM speedruns
+  ), runs AS (
+      SELECT
+          *,
+          RANK() OVER (PARTITION BY category_id, players_category, hc, hero ORDER BY seconds_played ASC) AS category_rank
+      FROM pb_runs WHERE personal_rank=1
+  ), rankings AS (
+      SELECT
+          runs.speedrun_user_id,
+          MAX(runs.user_id) AS user_id,
+          COUNT(*) FILTER(WHERE category_rank=1) AS gold,
+          COUNT(*) FILTER(WHERE category_rank=2) AS silver,
+          COUNT(*) FILTER(WHERE category_rank=3) AS bronze
+      FROM runs
+      GROUP BY speedrun_user_id ORDER BY gold DESC, silver DESC, bronze DESC
+  )
+  SELECT
+      rankings.*,
+      speedrun_users.name AS speedrun_user_name,
+      speedrun_users.weblink AS speedrun_user_weblink,
+      speedrun_users.country_code AS speedrun_user_country_code,
+      speedrun_users.light_color_from AS speedrun_user_light_color_from,
+      speedrun_users.light_color_to AS speedrun_user_light_color_to,
+      speedrun_users.dark_color_from AS speedrun_user_dark_color_from,
+      speedrun_users.dark_color_to AS speedrun_user_dark_color_to,
+      users.name AS user_name,
+      users.dark_color_from AS user_color,
+      RANK() OVER (ORDER BY gold DESC, silver DESC, bronze DESC)
+  FROM rankings
+  LEFT OUTER JOIN speedrun_users ON rankings.speedrun_user_id = speedrun_users.id
+  LEFT OUTER JOIN users ON rankings.user_id = users.id
+  WHERE (gold + silver + bronze) > 0
+  LIMIT 10
+  `);
+  res.json({
+    latestSpeedruns: latestSpeedruns.rows,
+    latestRecords: latestRecords.rows,
+    mostMedals: mostMedals.rows
+  });
 });
-
 module.exports = { router };
