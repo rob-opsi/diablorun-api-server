@@ -20,8 +20,8 @@ async function getSpeedruns(query) {
   let pbRunsFilter = '';
 
   if (filterKeys.length) {
-    runsFilter = `${filterKeys.map((key, i) => `runs.${key}=$${i+1}`).join(' AND ')}`;
-    pbRunsFilter = `${filterKeys.map((key, i) => `pb_runs.${key}=$${i+1}`).join(' AND ')}`;
+    runsFilter = `${filterKeys.map((key, i) => `runs.${key}=$${i + 1}`).join(' AND ')}`;
+    pbRunsFilter = `${filterKeys.map((key, i) => `pb_runs.${key}=$${i + 1}`).join(' AND ')}`;
   }
 
   // User filter
@@ -67,7 +67,7 @@ async function getSpeedruns(query) {
   if (query.order_by === 'submit_time') {
     orderBy = query.order_by;
   }
-  
+
   if (query.offset) {
     filterValues.push(query.offset);
 
@@ -138,6 +138,15 @@ async function getSpeedruns(query) {
     }
   };
 }
+
+// Get speedrun categories
+router.get('/categories', async function (req, res) {
+  const db = await getDbClient();
+  const categories = await db.query(`
+    SELECT * FROM speedrun_categories
+  `);
+  res.json(categories.rows);
+});
 
 router.get('/speedruns', async function (req, res) {
   res.json(await getSpeedruns(req.query));
