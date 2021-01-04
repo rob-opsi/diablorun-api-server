@@ -57,9 +57,14 @@ router.get('/races/:id', async function (req, res) {
             estimated_start_time,
             finish_conditions_global,
             entry_hero, entry_classic,
-            entry_hc, entry_players
+            entry_hc, entry_players,
+            active, token
         FROM races WHERE id=$1
     `, [id]);
+
+    if (!race.rows[0].active) {
+        delete race.rows[0].token;
+    }
 
     // Get rules
     const rules = await db.query(`
@@ -291,4 +296,22 @@ router.post('/races', async function (req, res) {
     res.json(race);
 });
 
-module.exports = { router };
+// Get active race
+async function getActiveRace () {
+    const db = await getDbClient();
+    const {rows} = await db.query(`
+        SELECT
+            id, name, slug, start_time, finish_time, description,
+            finish_conditions_global,
+            entry_new_character,
+            entry_hero, entry_classic,
+            entry_hc, entry_players,
+            token
+        FROM races
+        WHERE active=true LIMIT 1
+    `);
+
+    return rows.length ? rows[0] : null;
+}
+
+module.exports = { router, getActiveRace };

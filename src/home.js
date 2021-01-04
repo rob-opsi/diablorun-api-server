@@ -2,6 +2,7 @@ const shortid = require('shortid');
 const { Router } = require('express');
 const { getDbClient } = require('./db');
 const { broadcast } = require('./ws');
+const { getActiveRace } = require('./races');
 const router = new Router();
 
 // Get recent speedruns
@@ -147,7 +148,8 @@ router.get('/home', async function (req, res) {
   res.json({
     latestSpeedruns: latestSpeedruns.rows,
     latestRecords: latestRecords.rows,
-    mostMedals: mostMedals.rows
+    mostMedals: mostMedals.rows,
+    activeRace: await getActiveRace()
   });
 });
 module.exports = { router };
