@@ -91,9 +91,6 @@ export function getItemUpdates(time: number, payload: Payload, inventoryTab: num
 }
 
 export async function saveItemUpdates(characterId: number, { removedItems, addedItems }: ItemUpdates) {
-    console.log('remove', removedItems);
-    console.log('add', addedItems);
-
     if (removedItems.length) {
         await db.query(`
             DELETE FROM character_items WHERE character_id=$1
