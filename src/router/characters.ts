@@ -5,7 +5,7 @@ const { itemSlots } = require('@diablorun/diablorun-data');
 export const router = Router();
 
 // Get character data by id
-export async function getCharacterSnapshot(id) {
+export async function getCharacterSnapshot(id: number) {
     const [character, items, checkpoints] = await Promise.all([
     await db.query(`
       SELECT
@@ -58,14 +58,14 @@ export async function getCharacterSnapshot(id) {
 // Get character by id
 router.get('/characters/:id', async function (req, res) {
   try {
-    res.json(await getCharacterSnapshot(req.params.id));
+    res.json(await getCharacterSnapshot(parseInt(req.params.id)));
   } catch (err) {
     res.sendStatus(404);
   }
 });
 
 // Get character statistics by id
-async function getStatValues(id, stat) {
+async function getStatValues(id: number, stat: string) {
     const { rows } = await db.query(`
     WITH stats_log_indexed AS (
       SELECT *, ROW_NUMBER() OVER (ORDER BY in_game_time) AS index
@@ -84,8 +84,8 @@ async function getStatValues(id, stat) {
 
 router.get('/characters/:id/statistics', async function (req, res) {
   const [experience, gold_total] = await Promise.all([
-    await getStatValues(req.params.id, 'experience'),
-    await getStatValues(req.params.id, 'gold_total')
+    await getStatValues(parseInt(req.params.id), 'experience'),
+    await getStatValues(parseInt(req.params.id), 'gold_total')
   ]);
 
   res.json({
@@ -95,7 +95,7 @@ router.get('/characters/:id/statistics', async function (req, res) {
 });
 
 // Get characters by query
-export async function getCharacters(query) {
+export async function getCharacters(query: any) {
     let userId;
   let offsetFilter = '';
 

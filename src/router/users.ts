@@ -172,8 +172,8 @@ router.post('/users/:id/patreon', async function (req, res) {
   const params = new URLSearchParams();
   params.append('code', req.body.code);
   params.append('grant_type', 'authorization_code');
-  params.append('client_id', process.env.PATREON_CLIENT_ID);
-  params.append('client_secret', process.env.PATREON_CLIENT_SECRET);
+  params.append('client_id', process.env.PATREON_CLIENT_ID || '');
+  params.append('client_secret', process.env.PATREON_CLIENT_SECRET || '');
   params.append('redirect_uri', req.body.redirect_uri);
 
   const oauthRes = await fetch('https://www.patreon.com/api/oauth2/token', {

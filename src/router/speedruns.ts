@@ -4,7 +4,7 @@ import db from '../services/db';
 export const router = Router();
 
 // Get speedruns
-export async function getSpeedruns(query) {
+export async function getSpeedruns(query: any) {
   // Build filter from query
   const filterKeys = [];
   const filterValues = [];

@@ -209,14 +209,14 @@ router.post('/races', async function (req, res) {
                     stat, counter,
                     difficulty, quest_id,
                     time_type, time, time_seconds
-                ) VALUES ${race.rules.map((_, i) => `(
+                ) VALUES ${race.rules.map((_: any, i: number) => `(
                     $1, $${10 * i + 2}, $${10 * i + 3}, $${10 * i + 4},
                     $${10 * i + 5}, $${10 * i + 6},
                     $${10 * i + 7}, $${10 * i + 8},
                     $${10 * i + 9}, $${10 * i + 10}, $${10 * i + 11}
                 )`)}
             `, [race.id, ...Array.prototype.concat(
-                ...race.rules.map(point => [
+                ...race.rules.map((point: any) => [
                     point.context,
                     point.type, point.amount || 0,
                     point.stat, point.counter || 0,
