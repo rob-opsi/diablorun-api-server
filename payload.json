@@ -1,0 +1,35 @@
+{
+  "Headers": "API_KEY=GyXdArdPg",
+  "Name": "Shenk",
+  "Guid": "97feff9a-2608-4d06-a2dd-bdcb408d5e94",
+  "AddedItems": [
+    {
+      "Class": 335,
+      "ItemName": "Heavy Gloves",
+      "ItemBaseName": "Heavy Gloves",
+      "QualityColor": "WHITE",
+      "Properties": [],
+      "Location": {
+        "X": 10,
+        "Y": 0,
+        "Width": 2,
+        "Height": 2,
+        "BodyLocation": 10,
+        "Container": 0
+      },
+      "GUID": 47,
+      "BaseItem": "Heavy Gloves",
+      "Quality": "WHITE"
+    }
+  ],
+  "D2ProcessInfo": {
+    "Type": "D2",
+    "Version": "1.14d",
+    "CommandLineArgs": [
+      "-w"
+    ]
+  },
+  "DIApplicationInfo": {
+    "Version": "0.6.9"
+  }
+}

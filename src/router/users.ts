@@ -1,23 +1,22 @@
-const jwt = require('jsonwebtoken');
-const fetch = require('node-fetch');
-const shortid = require('shortid');
-const { URLSearchParams } = require('url');
-const { getCharacterSnapshot, getCharacters } = require('./characters');
-const { getSpeedruns } = require('./speedruns');
-const { Router } = require('express');
-const { getDbClient } = require('./db');
-const router = new Router();
+import fetch from 'node-fetch';
+import * as shortid from 'shortid';
+import { URLSearchParams } from 'url';
+import { getCharacterSnapshot, getCharacters } from './characters';
+import { getSpeedruns } from './speedruns';
+import { Router } from 'express';
+import db from '../services/db';
+
+export const router = Router();
 
 // Create or update user
 router.post('/users', async function (req, res) {
-  const db = await getDbClient();
-  const { access_token } = req.body;
+    const { access_token } = req.body;
 
   try {
     const twitch = await fetch('https://api.twitch.tv/helix/users/', {
       headers: {
         'Authorization': `Bearer ${access_token}`,
-        'Client-ID': process.env.TWITCH_CLIENT_ID
+        'Client-ID': process.env.TWITCH_CLIENT_ID || ''
       }
     });
 
@@ -73,9 +72,8 @@ router.post('/users', async function (req, res) {
 });
 
 // Get user by name
-async function getUserByName(username) {
-  const db = await getDbClient();
-  const user = await db.query(`
+export async function getUserByName(username: string) {
+    const user = await db.query(`
     SELECT
       id,
       name,
@@ -93,9 +91,8 @@ async function getUserByName(username) {
 }
 
 // Get user's last updated character
-async function getLastUpdatedCharacter(userId) {
-  const db = await getDbClient();
-  const lastUpdatedCharacter = await db.query(`
+export async function getLastUpdatedCharacter(userId: string) {
+    const lastUpdatedCharacter = await db.query(`
     SELECT id FROM characters
     WHERE user_id=$1 ORDER BY update_time DESC LIMIT 1
   `, [userId]);
@@ -109,8 +106,7 @@ async function getLastUpdatedCharacter(userId) {
 
 // Get currently active users
 router.get('/active-users', async function (req, res) {
-  const db = await getDbClient();
-  const time = Math.floor(Date.now()/1000) - 60;
+    const time = Math.floor(Date.now()/1000) - 60;
 
   const { rows } = await db.query(`
     WITH active_characters AS (
@@ -173,8 +169,6 @@ router.get('/users/:name/profile', async function (req, res) {
 
 // Link Patreon user
 router.post('/users/:id/patreon', async function (req, res) {
-  const db = await getDbClient();
-
   const params = new URLSearchParams();
   params.append('code', req.body.code);
   params.append('grant_type', 'authorization_code');
@@ -220,7 +214,7 @@ router.post('/users/:id/patreon', async function (req, res) {
   `, [
     patreonBody.data.id,
     req.params.id,
-    req.header('Authorization').split(' ')[1]
+    req.header('Authorization')?.split(' ')[1]
   ]);
 
   if (!result.rowCount) {
@@ -230,5 +224,3 @@ router.post('/users/:id/patreon', async function (req, res) {
 
   res.json({ id: patreonBody.data.id });
 });
-
-module.exports = { router, getUserByName, getLastUpdatedCharacter };

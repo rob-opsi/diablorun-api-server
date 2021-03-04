@@ -1,9 +1,10 @@
-const { Router } = require('express');
-const { getDbClient } = require('./db');
-const router = new Router();
+import { Router } from 'express';
+import db from '../services/db';
+
+export const router = Router();
 
 // Get speedruns
-async function getSpeedruns(query) {
+export async function getSpeedruns(query) {
   // Build filter from query
   const filterKeys = [];
   const filterValues = [];
@@ -33,8 +34,7 @@ async function getSpeedruns(query) {
   }
 
   // Database
-  const db = await getDbClient();
-
+  
   // Statistics
   const statistics = await db.query(`
     WITH pb_runs AS (
@@ -141,8 +141,7 @@ async function getSpeedruns(query) {
 
 // Get speedrun categories
 router.get('/categories', async function (req, res) {
-  const db = await getDbClient();
-  const categories = await db.query(`
+    const categories = await db.query(`
     SELECT * FROM speedrun_categories
   `);
   res.json(categories.rows);
@@ -151,5 +150,3 @@ router.get('/categories', async function (req, res) {
 router.get('/speedruns', async function (req, res) {
   res.json(await getSpeedruns(req.query));
 });
-
-module.exports = { router, getSpeedruns };

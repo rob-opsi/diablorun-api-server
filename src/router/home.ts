@@ -1,13 +1,11 @@
-const shortid = require('shortid');
-const { Router } = require('express');
-const { getDbClient } = require('./db');
-const { broadcast } = require('./ws');
-const { getActiveRace } = require('./races');
-const router = new Router();
+import { Router } from 'express';
+import db from '../services/db';
+import { getActiveRace } from './races';
+
+export const router = Router();
 
 // Get recent speedruns
 router.get('/home', async function (req, res) {
-  const db = await getDbClient();
   const latestSpeedruns = await db.query(`
     WITH pb_runs AS (
         SELECT
@@ -57,6 +55,7 @@ router.get('/home', async function (req, res) {
         ORDER BY runs.run_time DESC
       LIMIT 10  
     `);
+  
   const latestRecords = await db.query(`
     WITH pb_runs AS (
         SELECT
@@ -106,6 +105,7 @@ router.get('/home', async function (req, res) {
       WHERE runs.category_rank=1 ORDER BY runs.run_time DESC
       LIMIT 10  
     `);
+  
   const mostMedals = await db.query(`
     WITH pb_runs AS (
       SELECT
@@ -145,6 +145,7 @@ router.get('/home', async function (req, res) {
   WHERE (gold + silver + bronze) > 0
   LIMIT 10
   `);
+  
   res.json({
     latestSpeedruns: latestSpeedruns.rows,
     latestRecords: latestRecords.rows,
@@ -152,4 +153,3 @@ router.get('/home', async function (req, res) {
     activeRace: await getActiveRace()
   });
 });
-module.exports = { router };

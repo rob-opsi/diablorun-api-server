@@ -1,6 +1,6 @@
-const fetch = require('node-fetch');
+import fetch from 'node-fetch';
 
-async function broadcast(room, payload, twitchMessages = []) {
+export async function broadcast(room: string, payload: any, twitchMessages: { channel: string, message: string }[] = []) {
     await fetch(`http://${process.env.WS_HOSTNAME}`, {
         method: 'POST',
         body: JSON.stringify({
@@ -12,5 +12,3 @@ async function broadcast(room, payload, twitchMessages = []) {
         })
     });
 }
-
-module.exports = { broadcast };

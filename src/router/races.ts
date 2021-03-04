@@ -1,13 +1,13 @@
-const shortid = require('shortid');
-const { Router } = require('express');
-const { getDbClient } = require('./db');
-const { broadcast } = require('./ws');
-const router = new Router();
+import * as shortid from 'shortid';
+import { Router } from 'express';
+import db from '../services/db';
+import { broadcast } from '../services/ws';
+
+export const router = Router();
 
 // Get recent races
 router.get('/races', async function (req, res) {
-    const db = await getDbClient();
-    const races = await db.query(`
+        const races = await db.query(`
         SELECT
             id, name, slug, start_time, finish_time, description,
             finish_conditions_global,
@@ -22,8 +22,7 @@ router.get('/races', async function (req, res) {
 
 // Get race settings using editor token
 router.get('/races/editor', async function (req, res) {
-    const db = await getDbClient();
-    const editorToken = req.query.editor_token;
+        const editorToken = req.query.editor_token;
 
     const race = await db.query(`
         SELECT * FROM races WHERE editor_token=$1
@@ -46,8 +45,7 @@ router.get('/races/editor', async function (req, res) {
 
 // Get race by id
 router.get('/races/:id', async function (req, res) {
-    const db = await getDbClient();
-    const id = req.params.id;
+        const id = req.params.id;
     const time = Math.ceil(new Date().getTime() / 1000);
 
     // Get race
@@ -141,8 +139,7 @@ router.get('/races/:id', async function (req, res) {
 
 // Save race settings
 router.post('/races', async function (req, res) {
-    const db = await getDbClient();
-    const race = req.body;
+        const race = req.body;
 
     if (race.start_in) {
         race.start_time = Math.floor(new Date().getTime() / 1000) + race.start_in;
@@ -297,9 +294,8 @@ router.post('/races', async function (req, res) {
 });
 
 // Get active race
-async function getActiveRace () {
-    const db = await getDbClient();
-    const {rows} = await db.query(`
+export async function getActiveRace() {
+        const {rows} = await db.query(`
         SELECT
             id, name, slug, start_time, finish_time, description,
             finish_conditions_global,
@@ -313,5 +309,3 @@ async function getActiveRace () {
 
     return rows.length ? rows[0] : null;
 }
-
-module.exports = { router, getActiveRace };
