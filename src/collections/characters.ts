@@ -128,6 +128,7 @@ export interface CharacterSnapshot {
 }
 
 // Get character data by id
+// TODO: deprecate
 export async function getCharacterSnapshot(id: number): Promise<{ character: Character, checkpoints: any[] } | undefined> {
   const [character, items, checkpoints] = await Promise.all([
     await db.query(`
@@ -230,34 +231,4 @@ export async function getCharacters(query: any) {
       offset: characters.rows.length ? characters.rows[characters.rows.length - 1].id : 0
     }
   };
-}
-
-// Get character by name
-export async function getLatestCharacterByName(userId: number, name: string): Promise<Character | undefined> {
-    const characters = await db.query(`
-        SELECT * FROM characters
-        WHERE user_id=$1 AND name=$2 ORDER BY start_time DESC LIMIT 1
-    `, [userId, name]);
-
-    if (!characters.rows.length) {
-        return;
-    }
-
-    return characters.rows[0];
-}
-
-// Get character data by id
-export async function getLatestCharacterSnapshotByName(userId: number, name: string): Promise<CharacterSnapshot | undefined> {
-  const character = await getLatestCharacterByName(userId, name);
-
-  if (!character) {
-    return;
-  }
-  
-  const [items, quests] = await Promise.all([
-    await db.query(`SELECT item_hash FROM character_items WHERE character_id=$1`, [character.id]),
-    await db.query(`SELECT difficulty, quest_id FROM quests WHERE character_id=$1`, [character.id]),
-  ]);
-
-  return { character, items: items.rows, quests: quests.rows };
 }

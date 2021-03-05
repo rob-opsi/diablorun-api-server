@@ -1,6 +1,6 @@
 import * as dotenv from 'dotenv';
 import { getUserByApiKey } from '../collections/users';
-import { Character, CharacterSnapshot, getLatestCharacterSnapshotByName } from '../collections/characters';
+import { Character, CharacterSnapshot } from '../collections/characters';
 import db from '../services/db';
 import { getItemUpdates, saveItemUpdates } from './item-updates';
 import { Payload } from './payload';
@@ -9,6 +9,20 @@ import { getQuestUpdates, saveQuestUpdates } from './quest-updates';
 import { broadcast } from '../services/ws';
 
 const [MIN_MAJOR, MIN_MINOR, MIN_PATCH] = (process.env.MIN_DI_VERSION || '0.0.0').split('.').map(i => parseInt(i));
+
+async function getLatestCharacterByName(userId: number, name: string): Promise<Character | undefined> {
+    const characters = await db.query(`
+        SELECT * FROM characters
+        WHERE user_id=$1 AND name=$2 ORDER BY start_time DESC LIMIT 1
+    `, [userId, name]);
+
+    if (!characters.rows.length) {
+        return;
+    }
+
+    return characters.rows[0];
+}
+
 
 export async function sync(payload: Payload) {
     // Sync time
@@ -40,7 +54,20 @@ export async function sync(payload: Payload) {
     let before: CharacterSnapshot | undefined;
 
     if (!payload.NewCharacter) {
-        before = await getLatestCharacterSnapshotByName(user.id, payload.Name);
+        const characterBefore = await getLatestCharacterByName(user.id, payload.Name);
+
+        if (characterBefore) {
+            const [itemsBefore, questsBefore] = await Promise.all([
+                await db.query(`SELECT item_hash FROM character_items WHERE character_id=$1`, [characterBefore.id]),
+                await db.query(`SELECT difficulty, quest_id FROM quests WHERE character_id=$1`, [characterBefore.id]),
+            ]);
+
+            before = {
+                character: characterBefore,
+                items: itemsBefore.rows,
+                quests: questsBefore.rows
+            };
+        }
     }
 
     // Get active inventory tab
