@@ -46,6 +46,7 @@ export function getItemUpdates(time: number, payload: Payload, inventoryTab: num
         ...(payload.Hireling?.RemovedItems || [])
     ];
 
+    const itemIdsBefore = (before ? before.items : []).map(item => item.item_id);
     const itemHashesBefore = (before ? before.items : []).map(item => Number(item.item_hash));
     const addedItems: Partial<CharacterItem>[] = [];
     const addedPayload = [
@@ -65,9 +66,15 @@ export function getItemUpdates(time: number, payload: Payload, inventoryTab: num
         const item_hash = hash32(item_class + name + quality + properties + container + slot + x + y);
 
         if (!itemHashesBefore.includes(item_hash)) {
+            const item_id = itemPayload.GUID;
+
+            if (itemIdsBefore.includes(item_id)) {
+                removedItems.push(item_id);
+            }
+
             addedItems.push({
                 update_time: time,
-                item_id: itemPayload.GUID,
+                item_id,
                 item_class,
                 name,
                 base_name: itemPayload.BaseItem.trim(),
