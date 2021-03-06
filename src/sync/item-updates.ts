@@ -22,19 +22,23 @@ function getItemContainer(location: number): CharacterItem["container"] {
 }
 
 function getItemSlot(container: CharacterItem["container"], inventoryTab: number, location: number): CharacterItem["slot"] {
+    if (container !== 'character' && container !== 'hireling') {
+        return null;
+    }
+
     switch (location) {
         case 1: return 'head';
         case 2: return 'amulet';
         case 3: return 'body_armor';
-        case 4: return (container !== 'character' || !inventoryTab) ? 'primary_left' : 'primary_right';
-        case 5: return (container !== 'character' || !inventoryTab) ? 'primary_right' : 'primary_left';
+        case 4: return (container !== 'character' || !inventoryTab) ? 'primary_left' : 'secondary_left';
+        case 5: return (container !== 'character' || !inventoryTab) ? 'primary_right' : 'secondary_right';
         case 6: return 'ring_left';
         case 7: return 'ring_right';
         case 8: return 'belt';
         case 9: return 'boots';
         case 10: return 'gloves';
-        case 11: return (container !== 'character' || !inventoryTab) ? 'secondary_left' : 'secondary_right';
-        case 12: return (container !== 'character' || !inventoryTab) ? 'secondary_right' : 'secondary_left';
+        case 11: return (container !== 'character' || !inventoryTab) ? 'secondary_left' : 'primary_left';
+        case 12: return (container !== 'character' || !inventoryTab) ? 'secondary_right' : 'primary_right';
     }
 
     return null;
@@ -63,11 +67,10 @@ export function getItemUpdates(time: number, payload: Payload, inventoryTab: num
         const slot = getItemSlot(container, inventoryTab, itemPayload.Location.BodyLocation);
         const x = itemPayload.Location.X;
         const y = itemPayload.Location.Y;
-        const item_hash = hash32(item_class + name + quality + properties + container + slot + x + y);
+        const item_hash = hash32(item_class + name + quality + properties + container + (slot ? slot : ('' + x + y)));
+        const item_id = itemPayload.GUID;
 
         if (!itemHashesBefore.includes(item_hash)) {
-            const item_id = itemPayload.GUID;
-
             if (itemIdsBefore.includes(item_id)) {
                 removedItems.push(item_id);
             }
@@ -88,6 +91,12 @@ export function getItemUpdates(time: number, payload: Payload, inventoryTab: num
                 height: itemPayload.Location.Height,
                 item_hash
             });
+        } else {
+            const removedIndex = removedItems.indexOf(item_id);
+
+            if (removedIndex !== -1) {
+                removedItems.splice(removedIndex, 1);
+            }
         }
     }
 

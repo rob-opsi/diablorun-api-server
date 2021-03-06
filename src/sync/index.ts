@@ -58,7 +58,7 @@ export async function sync(payload: Payload) {
 
         if (characterBefore) {
             const [itemsBefore, questsBefore] = await Promise.all([
-                await db.query(`SELECT item_hash FROM character_items WHERE character_id=$1`, [characterBefore.id]),
+                await db.query(`SELECT item_id, item_hash FROM character_items WHERE character_id=$1`, [characterBefore.id]),
                 await db.query(`SELECT difficulty, quest_id FROM quests WHERE character_id=$1`, [characterBefore.id]),
             ]);
 
@@ -103,7 +103,7 @@ export async function sync(payload: Payload) {
     await saveItemUpdates(characterId, itemUpdates);
 
     // Broadcast updates
-    const userRoom = `user/${user.login}`;
+    const userRoom = `user/${user.name.toLowerCase()}`;
 
     await broadcast(userRoom, {
         action: 'update_character',
@@ -113,4 +113,6 @@ export async function sync(payload: Payload) {
         itemUpdates,
         questUpdates
     }, []);
+
+    return `https://diablo.run/${user.name}/@`;
 }
