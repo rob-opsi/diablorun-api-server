@@ -22,7 +22,7 @@ export function getCharacterUpdates(time: number, payload: Payload, questUpdates
   if (payload.CharClass !== undefined) updates.hero = heroes[payload.CharClass].id;
   if (payload.IsHardcore !== undefined) updates.hc = payload.IsHardcore;
   if (payload.IsExpansion !== undefined) updates.lod = payload.IsExpansion;
-  if (payload.IsExpansion !== undefined) updates.dead = payload.IsExpansion;
+  if (payload.IsDead !== undefined) updates.dead = payload.IsDead;
   if (payload.Deaths !== undefined) updates.deaths = payload.Deaths;
   if (payload.Level !== undefined) updates.level = payload.Level;
 
