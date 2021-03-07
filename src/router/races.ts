@@ -186,7 +186,7 @@ router.post('/races', async function (req, res) {
         race.token = shortid();
         race.editor_token = shortid();
 
-        const insert = await db.query(`
+        const insert = await db.query(sql(`
             INSERT INTO races (
                 name, slug, description,
                 token, editor_token,
@@ -199,7 +199,7 @@ router.post('/races', async function (req, res) {
                 entry_hc, entry_players,
                 estimated_start_time
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id
+            VALUES (%L) RETURNING id
         `, [
             race.name, race.slug, race.description, race.token, race.editor_token,
             race.finish_conditions_global,
@@ -210,7 +210,7 @@ router.post('/races', async function (req, res) {
             race.entry_asn, race.entry_classic,
             race.entry_hc, race.entry_players,
             race.estimated_start_time
-        ]);
+        ]));
 
         race.id = insert.rows[0].id;
     }
