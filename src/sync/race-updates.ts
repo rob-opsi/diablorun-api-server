@@ -123,7 +123,7 @@ export async function getRaceUpdates(time: number, characterId: number, characte
   }
 
   // Force race character broadcast if certain stats are updated
-  if (updatedStats.includes('total_gold') || updatedStats.includes('area') || updatedStats.includes('deaths') || updatedStats.includes('level') || updatedStats.includes('difficulty') || updatedStats.includes('players')) {
+  if (updatedStats.includes('gold_total') || updatedStats.includes('area') || updatedStats.includes('deaths') || updatedStats.includes('level') || updatedStats.includes('difficulty') || updatedStats.includes('players')) {
     for (const raceCharacter of raceCharacters) {
       if (raceUpdates.find(raceUpdate => raceUpdate.raceId === raceCharacter.race_id)) {
         continue;

@@ -50,6 +50,7 @@ router.get('/races/editor', async function (req, res) {
 // Get race by id
 router.get('/races/:id', async function (req, res) {
     const id = req.params.id;
+    const time = Math.floor(Date.now()/1000);
 
     const [race, rules, finishedCharacters, unfinishedCharacters] = await Promise.all([
         // Fetch race
@@ -99,7 +100,7 @@ router.get('/races/:id', async function (req, res) {
         db.query(`
             WITH latest_characters AS (
                 SELECT DISTINCT ON (characters.user_id) 
-                characters.*, race_characters.* FROM race_characters
+                characters.*, race_characters.*, ${time} - race_characters.start_time AS time FROM race_characters
                 INNER JOIN characters ON characters.id = race_characters.character_id
                 WHERE race_characters.race_id=$1 AND race_characters.finish_time IS NULL
                 ORDER BY characters.user_id, characters.update_time DESC
