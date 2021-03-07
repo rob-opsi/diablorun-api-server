@@ -17,7 +17,6 @@ export async function getRaceUpdates(time: number, characterId: number, characte
 
   // Find race rules that should be re-checked by stat and quest updates
   const findRules = [];
-
   const updatedStats = Object.keys(characterUpdates);
 
   if (updatedStats.length) {
@@ -52,6 +51,14 @@ export async function getRaceUpdates(time: number, characterId: number, characte
           update_time: time,
           points: rule.amount
         });
+      } else if (rule.type === 'per') {
+        checkpointUpdates.push({
+          race_id: rule.race_id,
+          character_id: characterId,
+          rule_id: rule.id,
+          update_time: time,
+          points: rule.amount * (characterUpdates[rule.stat] as number)
+        });
       }
 
       if (rule.context === 'finish_conditions') {
@@ -76,7 +83,7 @@ export async function getRaceUpdates(time: number, characterId: number, characte
         update_time: time,
         points: Number(raceCharacter.points)
       };
-      
+
       for (const checkpoint of checkpointUpdates) {
         if (checkpoint.race_id !== raceCharacter.race_id) {
           continue;
@@ -99,7 +106,7 @@ export async function getRaceUpdates(time: number, characterId: number, characte
         addCheckpoints.push(checkpoint);
         raceCharacterUpdates.points! += checkpoint.points;
       }
-      
+
       if (addCheckpoints.length) {
         if (raceFinishedUpdates.includes(raceCharacter.race_id)) {
           raceCharacterUpdates.finish_time = time;
@@ -112,6 +119,22 @@ export async function getRaceUpdates(time: number, characterId: number, characte
           addCheckpoints
         });
       }
+    }
+  }
+
+  // Force race character broadcast if certain stats are updated
+  if (updatedStats.includes('total_gold') || updatedStats.includes('area') || updatedStats.includes('deaths') || updatedStats.includes('level') || updatedStats.includes('difficulty') || updatedStats.includes('players')) {
+    for (const raceCharacter of raceCharacters) {
+      if (raceUpdates.find(raceUpdate => raceUpdate.raceId === raceCharacter.race_id)) {
+        continue;
+      }
+
+      raceUpdates.push({
+        raceId: raceCharacter.race_id,
+        raceCharacterUpdates: {},
+        removeCheckpoints: [],
+        addCheckpoints: []
+      });
     }
   }
 
@@ -137,7 +160,7 @@ export async function saveRaceUpdates(characterId: number, updates: RaceUpdate[]
         characterId, removeCheckpoints
       ));
     }
-    
+
     // Add new checkpoints
     if (addCheckpoints.length) {
       await db.query(sqlFormat(

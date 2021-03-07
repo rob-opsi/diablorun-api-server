@@ -135,7 +135,7 @@ export async function sync(payload: Payload) {
             action: 'update_race_character',
             raceId,
             characterId,
-            raceCharacterUpdates,
+            raceCharacterUpdates: { ...characterUpdates, ...raceCharacterUpdates },
             removeCheckpoints,
             addCheckpoints
         });

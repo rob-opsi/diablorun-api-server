@@ -15,7 +15,7 @@ ALTER TABLE characters ADD mf integer;
 ALTER TABLE characters ADD gold_total integer;
 ALTER TABLE characters ADD seconds_played integer;
 ALTER TABLE characters ADD in_game_time integer;
-ALTER TABLE characters ADD finish_time integer;
+-- ALTER TABLE characters ADD finish_time integer;
 ALTER TABLE characters ADD disqualified boolean;
 ALTER TABLE characters ADD town_visits integer DEFAULT 0;
 ALTER TABLE characters ADD finished_normal_quests integer DEFAULT 0;
