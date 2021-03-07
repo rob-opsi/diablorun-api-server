@@ -6,6 +6,8 @@ CREATE TABLE users (
   api_key text NOT NULL UNIQUE
 );
 
+-- ALTER TABLE users ADD selected_race_id integer REFERENCES races(id);
+
 -- Heroes
 CREATE TYPE hero_type AS ENUM (
   'ama',

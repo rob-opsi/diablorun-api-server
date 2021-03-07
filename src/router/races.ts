@@ -12,7 +12,10 @@ router.get('/races', async function (req, res) {
             id, name, slug, start_time, finish_time, description,
             finish_conditions_global,
             entry_new_character,
-            entry_hero, entry_classic,
+            entry_ama, entry_sor,
+            entry_nec, entry_pal,
+            entry_bar, entry_dru,
+            entry_asn, entry_classic,
             entry_hc, entry_players
         FROM races ORDER BY start_time DESC NULLS LAST LIMIT 10
     `);
@@ -54,7 +57,10 @@ router.get('/races/:id', async function (req, res) {
             id, name, slug, start_time, finish_time, description,
             estimated_start_time,
             finish_conditions_global,
-            entry_hero, entry_classic,
+            entry_ama, entry_sor,
+            entry_nec, entry_pal,
+            entry_bar, entry_dru,
+            entry_asn, entry_classic,
             entry_hc, entry_players,
             active, token
         FROM races WHERE id=$1
@@ -139,7 +145,7 @@ router.get('/races/:id', async function (req, res) {
 
 // Save race settings
 router.post('/races', async function (req, res) {
-        const race = req.body;
+    const race = req.body;
 
     if (race.start_in) {
         race.start_time = Math.floor(new Date().getTime() / 1000) + race.start_in;
@@ -149,20 +155,26 @@ router.post('/races', async function (req, res) {
     if (race.editor_token) {
         const update = await db.query(`
             UPDATE races SET
-                name=$1, slug=$2, description=$3,
-                finish_conditions_global=$4,
-                start_time=$5, finish_time=$6,
-                entry_new_character=$7,
-                entry_hero=$8, entry_classic=$9,
-                entry_hc=$10, entry_players=$11,
-                estimated_start_time=$12
-            WHERE editor_token=$13 RETURNING id
+                name=%L, slug=%L, description=%L,
+                finish_conditions_global=%L,
+                start_time=%L, finish_time=%L,
+                entry_new_character=%L,
+                entry_ama=%L, entry_sor=%L,
+                entry_nec=%L, entry_pal=%L,
+                entry_bar=%L, entry_dru=%L,
+                entry_asn=%L, entry_classic=%L,
+                entry_hc=%L, entry_players=%L,
+                estimated_start_time=%L
+            WHERE editor_token=%L RETURNING id
         `, [
             race.name, race.slug, race.description,
             race.finish_conditions_global,
             race.start_time, race.finish_time,
             race.entry_new_character,
-            race.entry_hero, race.entry_classic,
+            race.entry_ama, race.entry_sor,
+            race.entry_nec, race.entry_pal,
+            race.entry_bar, race.entry_dru,
+            race.entry_asn, race.entry_classic,
             race.entry_hc, race.entry_players,
             race.estimated_start_time,
             race.editor_token
@@ -179,7 +191,10 @@ router.post('/races', async function (req, res) {
                 token, editor_token,
                 finish_conditions_global,
                 entry_new_character,
-                entry_hero, entry_classic,
+                entry_ama, entry_sor,
+                entry_nec, entry_pal,
+                entry_bar, entry_dru,
+                entry_asn, entry_classic,
                 entry_hc, entry_players,
                 estimated_start_time
             )
@@ -188,7 +203,10 @@ router.post('/races', async function (req, res) {
             race.name, race.slug, race.description, race.token, race.editor_token,
             race.finish_conditions_global,
             race.entry_new_character,
-            race.entry_hero, race.entry_classic,
+            race.entry_ama, race.entry_sor,
+            race.entry_nec, race.entry_pal,
+            race.entry_bar, race.entry_dru,
+            race.entry_asn, race.entry_classic,
             race.entry_hc, race.entry_players,
             race.estimated_start_time
         ]);
@@ -300,7 +318,10 @@ export async function getActiveRace() {
             id, name, slug, start_time, finish_time, description,
             finish_conditions_global,
             entry_new_character,
-            entry_hero, entry_classic,
+            entry_ama, entry_sor,
+            entry_nec, entry_pal,
+            entry_bar, entry_dru,
+            entry_asn, entry_classic,
             entry_hc, entry_players,
             token
         FROM races

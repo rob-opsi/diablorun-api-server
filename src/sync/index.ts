@@ -7,6 +7,9 @@ import { Payload } from './payload';
 import { getCharacterUpdates, saveCharacterUpdates } from './character-updates';
 import { getQuestUpdates, saveQuestUpdates } from './quest-updates';
 import { broadcast } from '../services/ws';
+import { getRacesForCharacterEntry } from '../collections/races';
+import * as sqlFormat from 'pg-format';
+import { getRaceUpdates, saveRaceUpdates } from './race-updates';
 
 const [MIN_MAJOR, MIN_MINOR, MIN_PATCH] = (process.env.MIN_DI_VERSION || '0.0.0').split('.').map(i => parseInt(i));
 
@@ -102,17 +105,41 @@ export async function sync(payload: Payload) {
     await saveQuestUpdates(characterId, questUpdates);
     await saveItemUpdates(characterId, itemUpdates);
 
-    // Broadcast updates
-    const userRoom = `user/${user.name.toLowerCase()}`;
+    // When a new character is created, join public races where entry conditions are fulfilled
+    if (!before) {
+        const races = await getRacesForCharacterEntry(characterUpdates);
 
-    await broadcast(userRoom, {
+        await db.query(sqlFormat(
+            'INSERT INTO race_characters (race_id, character_id, start_time, update_time) VALUES %L',
+            races.map(race => [race.id, characterId, time, time])
+        ));
+    }
+    
+    // Check race updates
+    const raceUpdates = await getRaceUpdates(time, characterId, characterUpdates, questUpdates);
+    await saveRaceUpdates(characterId, raceUpdates);
+
+    // Broadcast updates
+    await broadcast(`user/${user.name.toLowerCase()}`, {
         action: 'update_character',
         id: characterId,
         name: payload.Name,
         characterUpdates,
         itemUpdates,
-        questUpdates
+        questUpdates,
+        raceUpdates
     }, []);
+
+    for (const { raceId, raceCharacterUpdates, removeCheckpoints, addCheckpoints } of raceUpdates) {
+        await broadcast(`race/${raceId}`, {
+            action: 'update_race_character',
+            raceId,
+            characterId,
+            raceCharacterUpdates,
+            removeCheckpoints,
+            addCheckpoints
+        });
+    }
 
     return `https://diablo.run/${user.name}/@`;
 }
