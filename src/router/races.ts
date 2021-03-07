@@ -1,13 +1,14 @@
 import * as shortid from 'shortid';
 import { Router } from 'express';
 import db from '../services/db';
+import * as sql from 'pg-format';
 import { broadcast } from '../services/ws';
 
 export const router = Router();
 
 // Get recent races
 router.get('/races', async function (req, res) {
-        const races = await db.query(`
+    const races = await db.query(`
         SELECT
             id, name, slug, start_time, finish_time, description,
             finish_conditions_global,
@@ -25,7 +26,7 @@ router.get('/races', async function (req, res) {
 
 // Get race settings using editor token
 router.get('/races/editor', async function (req, res) {
-        const editorToken = req.query.editor_token;
+    const editorToken = req.query.editor_token;
 
     const race = await db.query(`
         SELECT * FROM races WHERE editor_token=$1
@@ -48,7 +49,7 @@ router.get('/races/editor', async function (req, res) {
 
 // Get race by id
 router.get('/races/:id', async function (req, res) {
-        const id = req.params.id;
+    const id = req.params.id;
     const time = Math.ceil(new Date().getTime() / 1000);
 
     // Get race
@@ -153,7 +154,7 @@ router.post('/races', async function (req, res) {
 
     // Update race configuration
     if (race.editor_token) {
-        const update = await db.query(`
+        const update = await db.query(sql(`
             UPDATE races SET
                 name=%L, slug=%L, description=%L,
                 finish_conditions_global=%L,
@@ -166,7 +167,7 @@ router.post('/races', async function (req, res) {
                 entry_hc=%L, entry_players=%L,
                 estimated_start_time=%L
             WHERE editor_token=%L RETURNING id
-        `, [
+        `,
             race.name, race.slug, race.description,
             race.finish_conditions_global,
             race.start_time, race.finish_time,
@@ -178,7 +179,7 @@ router.post('/races', async function (req, res) {
             race.entry_hc, race.entry_players,
             race.estimated_start_time,
             race.editor_token
-        ]);
+        ));
 
         race.id = update.rows[0].id;
     } else {
@@ -313,7 +314,7 @@ router.post('/races', async function (req, res) {
 
 // Get active race
 export async function getActiveRace() {
-        const {rows} = await db.query(`
+    const { rows } = await db.query(`
         SELECT
             id, name, slug, start_time, finish_time, description,
             finish_conditions_global,
