@@ -1,18 +1,22 @@
-const shortid = require('shortid');
-const { Router } = require('express');
-const { getDbClient } = require('./db');
-const { broadcast } = require('./ws');
-const router = new Router();
+import * as shortid from 'shortid';
+import { Router } from 'express';
+import db from '../services/db';
+import * as sql from 'pg-format';
+import { broadcast } from '../services/ws';
+
+export const router = Router();
 
 // Get recent races
 router.get('/races', async function (req, res) {
-    const db = await getDbClient();
     const races = await db.query(`
         SELECT
-            id, name, slug, start_time, finish_time, description,
+            id, type, name, slug, start_time, finish_time, description,
             finish_conditions_global,
             entry_new_character,
-            entry_hero, entry_classic,
+            entry_ama, entry_sor,
+            entry_nec, entry_pal,
+            entry_bar, entry_dru,
+            entry_asn, entry_classic,
             entry_hc, entry_players
         FROM races ORDER BY start_time DESC NULLS LAST LIMIT 10
     `);
@@ -22,7 +26,6 @@ router.get('/races', async function (req, res) {
 
 // Get race settings using editor token
 router.get('/races/editor', async function (req, res) {
-    const db = await getDbClient();
     const editorToken = req.query.editor_token;
 
     const race = await db.query(`
@@ -46,62 +49,84 @@ router.get('/races/editor', async function (req, res) {
 
 // Get race by id
 router.get('/races/:id', async function (req, res) {
-    const db = await getDbClient();
     const id = req.params.id;
-    const time = Math.ceil(new Date().getTime() / 1000);
+    const time = Math.floor(Date.now()/1000);
 
-    // Get race
-    const race = await db.query(`
-        SELECT
-            id, name, slug, start_time, finish_time, description,
-            estimated_start_time,
-            finish_conditions_global,
-            entry_hero, entry_classic,
-            entry_hc, entry_players,
-            active, token
-        FROM races WHERE id=$1
-    `, [id]);
+    const [race, rules, finishedCharacters, unfinishedCharacters] = await Promise.all([
+        // Fetch race
+        db.query(`
+            SELECT
+                id, type, name, description, slug,
+                start_time, finish_time,
+                estimated_start_time,
+                finish_conditions_global,
+                entry_ama, entry_sor,
+                entry_nec, entry_pal,
+                entry_bar, entry_dru,
+                entry_asn, entry_classic,
+                entry_hc, entry_players,
+                active, token
+            FROM races WHERE id=$1
+        `, [id]),
+        // Fetch rules
+        db.query(`
+            SELECT * FROM race_rules WHERE race_id = $1
+        `, [id]),
+        // Fetch finished characters
+        db.query(`
+            WITH latest_characters AS (
+                SELECT DISTINCT ON (characters.user_id) 
+                characters.*, race_characters.*, race_characters.finish_time - race_characters.start_time AS time FROM race_characters
+                INNER JOIN characters ON characters.id = race_characters.character_id
+                WHERE race_characters.race_id=$1 AND race_characters.finish_time IS NOT NULL
+                ORDER BY characters.user_id, characters.update_time DESC
+            ), rankings AS (
+                SELECT latest_characters.*,
+                (RANK() OVER (
+                    ORDER BY time ASC
+                ))::integer AS rank
+                FROM latest_characters
+            )
+            SELECT
+                rankings.*,
+                users.name AS user_name,
+                users.country_code AS user_country_code,
+                users.dark_color_from AS user_color
+            FROM rankings
+            INNER JOIN users ON rankings.user_id = users.id
+            ORDER BY rank LIMIT 30
+        `, [id]),
+        // Fetch unfinished characters
+        db.query(`
+            WITH latest_characters AS (
+                SELECT DISTINCT ON (characters.user_id) 
+                characters.*, race_characters.*, ${time} - race_characters.start_time AS time FROM race_characters
+                INNER JOIN characters ON characters.id = race_characters.character_id
+                WHERE race_characters.race_id=$1 AND race_characters.finish_time IS NULL
+                ORDER BY characters.user_id, characters.update_time DESC
+            ), rankings AS (
+                SELECT latest_characters.*,
+                (RANK() OVER (
+                    ORDER BY points DESC
+                ))::integer AS rank
+                FROM latest_characters
+            )
+            SELECT
+                rankings.*,
+                users.name AS user_name,
+                users.country_code AS user_country_code,
+                users.dark_color_from AS user_color
+            FROM rankings
+            INNER JOIN users ON rankings.user_id = users.id
+            ORDER BY rank
+        `, [id])
+    ]);
 
     if (!race.rows[0].active) {
         delete race.rows[0].token;
     }
 
-    // Get rules
-    const rules = await db.query(`
-        SELECT * FROM race_rules WHERE race_id = $1
-    `, [id]);
-
-    // Get top characters
-    const characters = await db.query(`
-        WITH latest_characters AS (
-            SELECT DISTINCT ON (user_id)
-                id, user_id, name, difficulty, area, level, points, finish_time,
-                hero, hc, lod, players, gold_total, dead, deaths, start_time, disqualified,
-                (finish_time IS NOT NULL AND finish_time <= $2) AS is_finished
-            FROM characters
-            WHERE race_id=$1
-            ORDER BY user_id, update_time DESC
-        ), rankings AS (
-            SELECT latest_characters.*,
-            (RANK() OVER (
-                ORDER BY
-                disqualified ASC NULLS FIRST,
-                finish_time <= $2 DESC NULLS LAST,
-                points DESC NULLS LAST,
-                finish_time ASC NULLS LAST
-            ))::integer AS rank
-            FROM latest_characters
-        )
-        SELECT
-            rankings.*,
-            users.name AS user_name,
-            users.country_code AS user_country_code,
-            users.dark_color_from AS user_color
-        FROM rankings
-        INNER JOIN users ON rankings.user_id = users.id
-        ORDER BY rank LIMIT 100
-    `, [id, time]);
-
+    /*
     // Get recent notifications
     const notifications = await db.query(`
         SELECT * FROM race_notifications
@@ -127,74 +152,89 @@ router.get('/races/:id', async function (req, res) {
         WHERE race_id=$1 AND stat=$2
         )::integer / $4) = 0
     `, [id, 'points', race.rows[0].start_time, 50 * Math.max(1, characters.rows.length)]);
+    */
 
     // Value
     res.json({
         time: new Date().getTime(),
         race: race.rows[0],
         rules: rules.rows,
-        characters: characters.rows,
-        notifications: notifications.rows,
-        pointsLog: race.rows[0].start_time ? pointsLog.rows : []
+        finishedCharacters: finishedCharacters.rows,
+        unfinishedCharacters: unfinishedCharacters.rows
+        // notifications: notifications.rows,
+        // pointsLog: race.rows[0].start_time ? pointsLog.rows : []
     });
 });
 
 // Save race settings
 router.post('/races', async function (req, res) {
-    const db = await getDbClient();
     const race = req.body;
 
     if (race.start_in) {
         race.start_time = Math.floor(new Date().getTime() / 1000) + race.start_in;
     }
 
+    console.log(race);
+
     // Update race configuration
     if (race.editor_token) {
-        const update = await db.query(`
+        const update = await db.query(sql(`
             UPDATE races SET
-                name=$1, slug=$2, description=$3,
-                finish_conditions_global=$4,
-                start_time=$5, finish_time=$6,
-                entry_new_character=$7,
-                entry_hero=$8, entry_classic=$9,
-                entry_hc=$10, entry_players=$11,
-                estimated_start_time=$12
-            WHERE editor_token=$13 RETURNING id
-        `, [
-            race.name, race.slug, race.description,
+                type=%L, name=%L, slug=%L, description=%L,
+                finish_conditions_global=%L,
+                start_time=%L, finish_time=%L,
+                entry_new_character=%L,
+                entry_ama=%L, entry_sor=%L,
+                entry_nec=%L, entry_pal=%L,
+                entry_bar=%L, entry_dru=%L,
+                entry_asn=%L, entry_classic=%L,
+                entry_hc=%L, entry_players=%L,
+                estimated_start_time=%L
+            WHERE editor_token=%L RETURNING id
+        `,
+            race.type, race.name, race.slug, race.description,
             race.finish_conditions_global,
             race.start_time, race.finish_time,
             race.entry_new_character,
-            race.entry_hero, race.entry_classic,
+            race.entry_ama, race.entry_sor,
+            race.entry_nec, race.entry_pal,
+            race.entry_bar, race.entry_dru,
+            race.entry_asn, race.entry_classic,
             race.entry_hc, race.entry_players,
             race.estimated_start_time,
             race.editor_token
-        ]);
+        ));
 
         race.id = update.rows[0].id;
     } else {
         race.token = shortid();
         race.editor_token = shortid();
 
-        const insert = await db.query(`
+        const insert = await db.query(sql(`
             INSERT INTO races (
-                name, slug, description,
+                type, name, slug, description,
                 token, editor_token,
                 finish_conditions_global,
                 entry_new_character,
-                entry_hero, entry_classic,
+                entry_ama, entry_sor,
+                entry_nec, entry_pal,
+                entry_bar, entry_dru,
+                entry_asn, entry_classic,
                 entry_hc, entry_players,
                 estimated_start_time
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id
+            VALUES (%L) RETURNING id
         `, [
-            race.name, race.slug, race.description, race.token, race.editor_token,
+            race.type, race.name, race.slug, race.description, race.token, race.editor_token,
             race.finish_conditions_global,
             race.entry_new_character,
-            race.entry_hero, race.entry_classic,
+            race.entry_ama, race.entry_sor,
+            race.entry_nec, race.entry_pal,
+            race.entry_bar, race.entry_dru,
+            race.entry_asn, race.entry_classic,
             race.entry_hc, race.entry_players,
             race.estimated_start_time
-        ]);
+        ]));
 
         race.id = insert.rows[0].id;
     }
@@ -212,14 +252,14 @@ router.post('/races', async function (req, res) {
                     stat, counter,
                     difficulty, quest_id,
                     time_type, time, time_seconds
-                ) VALUES ${race.rules.map((_, i) => `(
+                ) VALUES ${race.rules.map((_: any, i: number) => `(
                     $1, $${10 * i + 2}, $${10 * i + 3}, $${10 * i + 4},
                     $${10 * i + 5}, $${10 * i + 6},
                     $${10 * i + 7}, $${10 * i + 8},
                     $${10 * i + 9}, $${10 * i + 10}, $${10 * i + 11}
                 )`)}
             `, [race.id, ...Array.prototype.concat(
-                ...race.rules.map(point => [
+                ...race.rules.map((point: any) => [
                     point.context,
                     point.type, point.amount || 0,
                     point.stat, point.counter || 0,
@@ -297,14 +337,16 @@ router.post('/races', async function (req, res) {
 });
 
 // Get active race
-async function getActiveRace () {
-    const db = await getDbClient();
-    const {rows} = await db.query(`
+export async function getActiveRace() {
+    const { rows } = await db.query(`
         SELECT
-            id, name, slug, start_time, finish_time, description,
+            id, type, name, slug, start_time, finish_time, description,
             finish_conditions_global,
             entry_new_character,
-            entry_hero, entry_classic,
+            entry_ama, entry_sor,
+            entry_nec, entry_pal,
+            entry_bar, entry_dru,
+            entry_asn, entry_classic,
             entry_hc, entry_players,
             token
         FROM races
@@ -313,5 +355,3 @@ async function getActiveRace () {
 
     return rows.length ? rows[0] : null;
 }
-
-module.exports = { router, getActiveRace };

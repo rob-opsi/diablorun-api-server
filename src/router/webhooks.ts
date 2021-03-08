@@ -1,12 +1,12 @@
-const { Router } = require('express');
-const { getDbClient } = require('./db');
-const twitchCommands = require('./twitch-commands');
-const router = new Router();
+import { Router } from 'express';
+import db from '../services/db';
+import { commands } from '../services/twitch-commands';
+
+export const router = Router();
 
 // Patreon
 router.post('/webhooks/patreon', async function (req, res) {
-    const db = await getDbClient();
-    const id = req.body.data.relationships.patron.data.id;
+        const id = req.body.data.relationships.patron.data.id;
     const amount = req.body.data.attributes.amount_cents;
 
     switch (req.header('x-patreon-event')) {
@@ -31,15 +31,14 @@ router.post('/webhooks/patreon', async function (req, res) {
 
 // Twitch bot data
 router.get('/twitch-bot', async function (_req, res) {
-    const db = await getDbClient();
-    const patreons = await db.query(`
+        const patreons = await db.query(`
         SELECT name FROM users
         LEFT JOIN patreon_pledges ON patreon_pledges.patreon_user_id = users.patreon_id
         WHERE patreon_pledges.amount_cents > 0
     `);
 
     res.json({
-        commands: Object.keys(twitchCommands),
+        commands: Object.keys(commands),
         channels: patreons.rows.map(patreon => patreon.name)
     });
 });
@@ -56,9 +55,9 @@ router.post('/webhooks/twitch-command', async function (req, res) {
         for (let i = 0; i < parts.length; ++i) {
             command += (i ? ' ' : '') + parts[i].toLowerCase();
 
-            if (twitchCommands.hasOwnProperty(command)) {
+            if (commands.hasOwnProperty(command)) {
                 const args = parts.slice(i + 1);
-                const message = await twitchCommands[command](
+                const message = await commands[command](
                     username, args, req.body.from
                 );
 

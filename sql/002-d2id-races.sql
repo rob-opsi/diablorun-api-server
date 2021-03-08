@@ -1,5 +1,6 @@
 CREATE TABLE races (
   id serial PRIMARY KEY,
+  type text NOT NULL,
   name text,
   slug text,
   start_time integer,
@@ -13,8 +14,8 @@ CREATE TABLE races (
   description text;
 );
 
-ALTER TABLE characters ADD race_id integer REFERENCES races(id);
-ALTER TABLE characters ADD points integer DEFAULT 0;
+-- ALTER TABLE characters ADD race_id integer REFERENCES races(id);
+-- ALTER TABLE characters ADD points integer DEFAULT 0;
 ALTER TABLE characters ADD preliminary boolean DEFAULT false;
 
 -- Entry conditions

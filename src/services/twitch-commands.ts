@@ -1,243 +1,257 @@
-const moment = require('moment');
-const millify = require('millify').default;
+import * as moment from 'moment';
+import millify from 'millify';
+import db from './db';
+import { getUserByName, getLastUpdatedCharacterSnapshot } from '../collections/users';
+
 const data = require('@diablorun/diablorun-data');
-const { getDbClient } = require('./db');
-const { getUserByName } = require('./users');
-const { getLastUpdatedCharacter } = require('./users');
 
-async function getCharacterByUsername(username) {
-    const user = await getUserByName(username);
+export const commands: any = {};
 
-    if (!user) {
-      return;
-    }
+async function getCharacterByUsername(username: string) {
+  const user = await getUserByName(username);
 
-    return await getLastUpdatedCharacter(user.id); 
+  if (!user) {
+    return;
+  }
+
+  return await getLastUpdatedCharacterSnapshot(user.id);
 }
 
-async function itemCommand(slot, username) {
-    const { character } = await getCharacterByUsername(username);
-    
-    if (!character) {
-      return;
-    }
+async function itemCommand(slot: string, username: string) {
+  const snapshot = await getCharacterByUsername(username);
 
-    if (character[slot]) {
-        return `${character[slot].name}: ${JSON.parse(character[slot].properties).join(', ')}`;
-    } else {
-        return `Nothing in ${slot}`;
-    }
+  if (!snapshot) {
+    return;
+  }
+
+  const character = snapshot.character as any;
+
+  if (character[slot]) {
+    return `${character[slot].name}: ${JSON.parse(character[slot].properties).join(', ')}`;
+  } else {
+    return `Nothing in ${slot}`;
+  }
 }
 
-exports['!gear'] = async function (username) {
-    return `diablo.run/${username}/@`;
+commands['!gear'] = async function (username: string) {
+  return `diablo.run/${username}/@`;
 };
 
-exports['!character'] = async function (username) {
-    const { character } = await getCharacterByUsername(username);
-    
-    if (!character) {
-      return;
-    }
+commands['!character'] = async function (username: string) {
+  const snapshot = await getCharacterByUsername(username);
 
-    return `diablo.run/${username}/${character.name}${character.id}`;
+  if (!snapshot) {
+    return;
+  }
+
+  const character = snapshot.character;
+  return `diablo.run/${username}/${character.name}${character.id}`;
 };
 
-exports['!race'] = async function (username) {
-    const { character } = await getCharacterByUsername(username);
-    
-    if (!character || !character.race_id) {
-      return;
-    }
+commands['!race'] = async function (username: string) {
+  const snapshot = await getCharacterByUsername(username);
 
-    return `diablo.run/race/${character.race_id}`;
+  if (!snapshot) {
+    return;
+  }
+
+  const character = snapshot.character;
+
+  if (!character.race_id) {
+    return;
+  }
+
+  return `diablo.run/race/${character.race_id}`;
 };
 
-exports['!towns'] = async function (username) {
-    const { character } = await getCharacterByUsername(username);
-    
-    if (!character) {
-      return;
-    }
+commands['!towns'] = async function (username: string) {
+  const snapshot = await getCharacterByUsername(username);
 
-    return `${character.name} has gone to town ${character.town_visits} times`;
+  if (!snapshot) {
+    return;
+  }
+
+  const character = snapshot.character;
+  return `${character.name} has gone to town ${character.town_visits} times`;
 };
 
-exports['!merc'] = async function (username) {
-    const { character } = await getCharacterByUsername(username);
-    
-    if (!character) {
-      return;
-    }
+commands['!merc'] = async function (username: string) {
+  const snapshot = await getCharacterByUsername(username);
 
-    const act = data.hirelings[character.hireling_class];
-    const skills = JSON.parse(character.hireling_skill_ids)
-      .map(id => data.skills[id]).join(' and ');
+  if (!snapshot) {
+    return;
+  }
 
-    return `${character.hireling_name} is a level ${character.hireling_level} hireling from ${act} using ${skills}`;
+  const character = snapshot.character;
+
+  if (!character.hireling_class) {
+    return;
+  }
+
+  const act = data.hirelings[character.hireling_class];
+  const skills = JSON.parse(character.hireling_skill_ids || '[]')
+    .map((id: number) => data.skills[id]).join(' and ');
+
+  return `${character.hireling_name} is a level ${character.hireling_level} hireling from ${act} using ${skills}`;
 };
 
-exports['!exp'] = async function (username, args) {
-    const { character } = await getCharacterByUsername(username);
-    
-    if (!character) {
-      return;
-    }
+commands['!exp'] = async function (username: string, args: string[]) {
+  const snapshot = await getCharacterByUsername(username);
 
-    const interval = args[0] || 'hour';
-    const seconds = moment.duration(1, interval).asSeconds();
-    const inGameTime = character.in_game_time - seconds;
+  if (!snapshot) {
+    return;
+  }
 
-    const db = await getDbClient();
-    const log = await db.query(`
+  const character = snapshot.character;
+  const interval = args[0] || 'hour';
+  const seconds = moment.duration(1, interval as any).asSeconds();
+  const inGameTime = character.in_game_time - seconds;
+
+  const log = await db.query(`
       SELECT in_game_time, value FROM stats_log
       WHERE character_id=$1 AND stat=$2 AND in_game_time >= $3
       ORDER BY in_game_time ASC LIMIT 1
     `, [character.id, 'experience', inGameTime]);
 
-    if (!log.rows.length) {
-        return;
-    }
-    
-    const gain = character.experience - log.rows[0].value;
-    const time = character.in_game_time - log.rows[0].in_game_time;
-    let message = `${millify(gain)} exp in ${moment.duration(time, 'seconds').humanize()}`;
+  if (!log.rows.length) {
+    return;
+  }
 
-    if (character.level < 99) {
-        const expToLevel = data.levelExperience[character.level] - character.experience;
-        const timeToLevel = time * expToLevel / gain;
-        const h = Math.floor(timeToLevel / 3600);
-        const m = Math.floor((timeToLevel % 3600) / 60);
-        const s = Math.floor(timeToLevel % 60);
+  const gain = character.experience - log.rows[0].value;
+  const time = character.in_game_time - log.rows[0].in_game_time;
+  let message = `${millify(gain)} exp in ${moment.duration(time, 'seconds').humanize()}`;
 
-        message += `, level ${character.level + 1} in`;
+  if (character.level < 99) {
+    const expToLevel = data.levelExperience[character.level] - character.experience;
+    const timeToLevel = time * expToLevel / gain;
+    const h = Math.floor(timeToLevel / 3600);
+    const m = Math.floor((timeToLevel % 3600) / 60);
+    const s = Math.floor(timeToLevel % 60);
 
-        if (h) message += ` ${h}h`;
-        if (m) message += ` ${m}m`;
-        if (s) message += ` ${s}s`;
-    }
+    message += `, level ${character.level + 1} in`;
 
-    return message;
+    if (h) message += ` ${h}h`;
+    if (m) message += ` ${m}m`;
+    if (s) message += ` ${s}s`;
+  }
+
+  return message;
 };
 
-exports['!gold'] = async function (username, args) {
-    const { character } = await getCharacterByUsername(username);
-    
-    if (!character) {
-      return;
-    }
+commands['!gold'] = async function (username: string, args: string[]) {
+  const snapshot = await getCharacterByUsername(username);
 
-    const interval = args[0] || 'hour';
-    const seconds = moment.duration(1, interval).asSeconds();
-    const inGameTime = character.in_game_time - seconds;
+  if (!snapshot) {
+    return;
+  }
 
-    const db = await getDbClient();
-    const log = await db.query(`
+  const character = snapshot.character;
+  const interval = args[0] || 'hour';
+  const seconds = moment.duration(1, interval as any).asSeconds();
+  const inGameTime = character.in_game_time - seconds;
+
+  const log = await db.query(`
       SELECT in_game_time, value FROM stats_log
       WHERE character_id=$1 AND stat=$2 AND in_game_time >= $3
       ORDER BY in_game_time ASC LIMIT 1
     `, [character.id, 'gold_total', inGameTime]);
 
-    if (!log.rows.length) {
-        return;
-    }
+  if (!log.rows.length) {
+    return;
+  }
 
-    const gain = character.gold_total - log.rows[0].value;
-    const humanizedDuration = moment.duration(character.in_game_time - log.rows[0].in_game_time, 'seconds').humanize(true);
+  const gain = character.gold_total - log.rows[0].value;
+  const humanizedDuration = moment.duration(character.in_game_time - log.rows[0].in_game_time, 'seconds').humanize(true);
 
-    return `${millify(gain)} gold ${humanizedDuration}`;
+  return `${millify(gain)} gold ${humanizedDuration}`;
 };
 
-exports['!head'] = itemCommand.bind(exports, 'head');
-exports['!amulet'] = itemCommand.bind(exports, 'amulet');
-exports['!body_armor'] = itemCommand.bind(exports, 'body_armor');
-exports['!primary_left'] = itemCommand.bind(exports, 'primary_left');
-exports['!primary_right'] = itemCommand.bind(exports, 'primary_right');
-exports['!ring_left'] = itemCommand.bind(exports, 'ring_left');
-exports['!ring_right'] = itemCommand.bind(exports, 'ring_right');
-exports['!belt'] = itemCommand.bind(exports, 'belt');
-exports['!boots'] = itemCommand.bind(exports, 'boots');
-exports['!gloves'] = itemCommand.bind(exports, 'gloves');
-exports['!secondary_left'] = itemCommand.bind(exports, 'secondary_left');
-exports['!secondary_right'] = itemCommand.bind(exports, 'secondary_right');
-exports['!hireling_head'] = itemCommand.bind(exports, 'hireling_head');
-exports['!hireling_body_armor'] = itemCommand.bind(exports, 'hireling_body_armor');
-exports['!hireling_primary_left'] = itemCommand.bind(exports, 'hireling_primary_left');
-exports['!hireling_primary_right'] = itemCommand.bind(exports, 'hireling_primary_right');
+commands['!head'] = itemCommand.bind(commands, 'head');
+commands['!amulet'] = itemCommand.bind(commands, 'amulet');
+commands['!body_armor'] = itemCommand.bind(commands, 'body_armor');
+commands['!primary_left'] = itemCommand.bind(commands, 'primary_left');
+commands['!primary_right'] = itemCommand.bind(commands, 'primary_right');
+commands['!ring_left'] = itemCommand.bind(commands, 'ring_left');
+commands['!ring_right'] = itemCommand.bind(commands, 'ring_right');
+commands['!belt'] = itemCommand.bind(commands, 'belt');
+commands['!boots'] = itemCommand.bind(commands, 'boots');
+commands['!gloves'] = itemCommand.bind(commands, 'gloves');
+commands['!secondary_left'] = itemCommand.bind(commands, 'secondary_left');
+commands['!secondary_right'] = itemCommand.bind(commands, 'secondary_right');
+commands['!hireling_head'] = itemCommand.bind(commands, 'hireling_head');
+commands['!hireling_body_armor'] = itemCommand.bind(commands, 'hireling_body_armor');
+commands['!hireling_primary_left'] = itemCommand.bind(commands, 'hireling_primary_left');
+commands['!hireling_primary_right'] = itemCommand.bind(commands, 'hireling_primary_right');
 
-exports['!deaths'] = async function (username) {
-    const user = await getUserByName(username);
+commands['!deaths'] = async function (username: string) {
+  const user = await getUserByName(username);
 
-    if (!user) {
-      return;
-    }
+  if (!user) {
+    return;
+  }
 
-    const db = await getDbClient();
-    const result = await db.query(`
+  const result = await db.query(`
         SELECT SUM(deaths) AS total FROM characters
         WHERE user_id=$1
     `, [user.id]);
 
-    return `${username} has ${result.rows[0].total} total deaths`;
+  return `${username} has ${result.rows[0].total} total deaths`;
 };
 
-exports['!classes'] = async function (username) {
-    const user = await getUserByName(username);
+commands['!classes'] = async function (username: string) {
+  const user = await getUserByName(username);
 
-    if (!user) {
-      return;
-    }
+  if (!user) {
+    return;
+  }
 
-    const db = await getDbClient();
-    const stats = await db.query(`
+  const stats = await db.query(`
         SELECT hero, COUNT(*) AS count FROM characters
         WHERE user_id=$1 GROUP BY hero
     `, [user.id]);
 
-    const rows = stats.rows.filter(s => s.hero);
-    const total = rows.reduce((t, row) => t + parseInt(row.count), 0);
-    const values = rows.map(
-        row => `${Math.round(parseInt(row.count) / total * 100)}% ${row.hero}`
-    );
+  const rows = stats.rows.filter(s => s.hero);
+  const total = rows.reduce((t, row) => t + parseInt(row.count), 0);
+  const values = rows.map(
+    row => `${Math.round(parseInt(row.count) / total * 100)}% ${row.hero}`
+  );
 
-    return values.join(', ');
+  return values.join(', ');
 };
 
-exports['!core'] = async function (username) {
-    const user = await getUserByName(username);
+commands['!core'] = async function (username: string) {
+  const user = await getUserByName(username);
 
-    if (!user) {
-      return;
-    }
+  if (!user) {
+    return;
+  }
 
-    const db = await getDbClient();
-    const stats = await db.query(`
+  const stats = await db.query(`
           SELECT hc, COUNT(*) AS count FROM characters
           WHERE user_id=$1 GROUP BY hc
         `, [user.id]);
 
-    const rows = stats.rows.filter(row => row.hc !== null).map(row => ({
-        count: parseInt(row.count),
-        value: row.hc ? 'hc' : 'sc'
-    }));
+  const rows = stats.rows.filter(row => row.hc !== null).map(row => ({
+    count: parseInt(row.count),
+    value: row.hc ? 'hc' : 'sc'
+  }));
 
-    const total = rows.reduce((t, row) => t + row.count, 0);
-    const values = rows.map(
-        row => `${Math.round(row.count / total * 100)}% ${row.value}`
-    );
+  const total = rows.reduce((t, row) => t + row.count, 0);
+  const values = rows.map(
+    row => `${Math.round(row.count / total * 100)}% ${row.value}`
+  );
 
-    return values.join(', ');
+  return values.join(', ');
 };
 
-exports['!levels'] = async function (username) {
-    const user = await getUserByName(username);
+commands['!levels'] = async function (username: string) {
+  const user = await getUserByName(username);
 
-    if (!user) {
-      return;
-    }
+  if (!user) {
+    return;
+  }
 
-    const db = await getDbClient();
-    const stats = await db.query(`
+  const stats = await db.query(`
           SELECT
             COUNT(CASE WHEN level <= 17 THEN 1 ELSE NULL END) AS "1-17",
             COUNT(CASE WHEN level > 17 AND level <= 21 THEN 1 ELSE NULL END) AS "18-21",
@@ -245,45 +259,43 @@ exports['!levels'] = async function (username) {
           FROM characters wHERE user_id=$1
         `, [user.id]);
 
-    const rows = [
-        { count: parseInt(stats.rows[0]['1-17']), value: '1-17' },
-        { count: parseInt(stats.rows[0]['18-21']), value: '18-21' },
-        { count: parseInt(stats.rows[0]['22+']), value: '22+' }
-    ];
+  const rows = [
+    { count: parseInt(stats.rows[0]['1-17']), value: '1-17' },
+    { count: parseInt(stats.rows[0]['18-21']), value: '18-21' },
+    { count: parseInt(stats.rows[0]['22+']), value: '22+' }
+  ];
 
-    const total = rows.reduce((t, row) => t + row.count, 0);
-    const values = rows.map(
-        row => `${Math.round(row.count / total * 100)}% ${row.value}`
-    );
+  const total = rows.reduce((t, row) => t + row.count, 0);
+  const values = rows.map(
+    row => `${Math.round(row.count / total * 100)}% ${row.value}`
+  );
 
-    return values.join(', ');
+  return values.join(', ');
 };
 
-exports['!hcdead'] = async function (username) {
-    const user = await getUserByName(username);
+commands['!hcdead'] = async function (username: string) {
+  const user = await getUserByName(username);
 
-    if (!user) {
-      return;
-    }
+  if (!user) {
+    return;
+  }
 
-    const db = await getDbClient();
-    const result = await db.query(`
+  const result = await db.query(`
           SELECT AVG(level) FROM characters
           WHERE user_id=$1 AND dead AND hc
         `, [user.id]);
 
-    return `On average, ${user.name} dies at level ${Math.round(result.rows[0].avg * 10) / 10} in HC`;
+  return `On average, ${user.name} dies at level ${Math.round(result.rows[0].avg * 10) / 10} in HC`;
 };
 
-exports['!hcwhere'] = async function (username) {
-    const user = await getUserByName(username);
+commands['!hcwhere'] = async function (username: string) {
+  const user = await getUserByName(username);
 
-    if (!user) {
-      return;
-    }
+  if (!user) {
+    return;
+  }
 
-    const db = await getDbClient();
-    const result = await db.query(`
+  const result = await db.query(`
           WITH t AS (
             SELECT area, COUNT(*) FROM characters
             WHERE user_id=$1 AND dead AND hc GROUP BY area
@@ -291,16 +303,16 @@ exports['!hcwhere'] = async function (username) {
           SELECT * FROM t ORDER BY count DESC LIMIT 5
         `, [user.id]);
 
-    let values = result.rows.map(
-        row => `${row.count} in ${data.areas[row.area].name}`
-    );
+  let values = result.rows.map(
+    row => `${row.count} in ${data.areas[row.area].name}`
+  );
 
-    return `Common HC deaths: ${values.join(', ')}`;
+  return `Common HC deaths: ${values.join(', ')}`;
 };
 
 // Recipes (runewords and crafting)
-async function addRecipeCommand(cmd, message) {
-    exports[`!${cmd}`] = async () => message;
+async function addRecipeCommand(cmd: string, message: string) {
+  commands[`!${cmd}`] = async () => message;
 }
 
 // Runewords

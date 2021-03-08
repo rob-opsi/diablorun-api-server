@@ -6,7 +6,7 @@ const { zipObject } = require('./utils');
 const { broadcast } = require('../ws');
 const { updateLog } = require('./log');
 const { areas } = require('@diablorun/diablorun-data');
-const { getDbClient } = require('../db');
+const { getDbClient } = require('../services/db');
 
 module.exports = async function (body) {
   const client = await getDbClient();
