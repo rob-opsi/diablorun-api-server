@@ -1,9 +1,9 @@
 -- Character items
 CREATE TABLE character_items (
   character_id integer REFERENCES characters(id) NOT NULL,
+  item_hash bigint NOT NULL,
   item_id integer NOT NULL,
   item_class integer NOT NULL,
-  item_hash bigint NOT NULL,
 
   container item_container_type NOT NULL,
   slot item_slot_type,
@@ -18,7 +18,7 @@ CREATE TABLE character_items (
   base_name text NOT NULL,
   properties text NOT NULL,
 
-  PRIMARY KEY (character_id, item_id)
+  PRIMARY KEY (character_id, item_hash)
 );
 
 CREATE INDEX character_items_character_id ON character_items USING btree (character_id);

@@ -4,7 +4,7 @@ import db from '../services/db';
 import { hash32 } from 'farmhash';
 
 interface ItemUpdates {
-    removedItems: number[];
+    removedItemHashes: number[];
     addedItems: Partial<CharacterItem>[];
 }
 
@@ -45,13 +45,32 @@ function getItemSlot(container: CharacterItem["container"], inventoryTab: number
 }
 
 export function getItemUpdates(time: number, payload: Payload, inventoryTab: number, before?: CharacterSnapshot): ItemUpdates {
-    const removedItems = [
+    // Get items before update
+    const itemsBefore = before ? before.items : [];
+    const itemsBeforeById: { [id: string]: CharacterItem } = {};
+    const itemsBeforeByHash: { [hash: string]: CharacterItem } = {};
+
+    for (const item of itemsBefore) {
+        itemsBeforeById[item.item_id] = item;
+        itemsBeforeByHash[item.item_hash] = item;
+    }
+
+    // Get removed item hashes
+    const removedItemHashes = [];
+    const removedItemIds = [
         ...(payload.RemovedItems || []),
         ...(payload.Hireling?.RemovedItems || [])
     ];
 
-    const itemIdsBefore = (before ? before.items : []).map(item => item.item_id);
-    const itemHashesBefore = (before ? before.items : []).map(item => Number(item.item_hash));
+    for (const itemId of removedItemIds) {
+        const itemBeforeById = itemsBeforeById[itemId];
+
+        if (itemBeforeById) {
+            removedItemHashes.push(Number(itemBeforeById.item_hash));
+        }
+    }
+
+    // Add items
     const addedItems: Partial<CharacterItem>[] = [];
     const addedPayload = [
         ...(payload.AddedItems || []),
@@ -59,6 +78,7 @@ export function getItemUpdates(time: number, payload: Payload, inventoryTab: num
     ];
 
     for (const itemPayload of addedPayload) {
+        const item_id = itemPayload.GUID;
         const container = getItemContainer(itemPayload.Location.Container);
         const item_class = itemPayload.Class;
         const name = itemPayload.ItemName.trim();
@@ -67,51 +87,44 @@ export function getItemUpdates(time: number, payload: Payload, inventoryTab: num
         const slot = getItemSlot(container, inventoryTab, itemPayload.Location.BodyLocation);
         const x = itemPayload.Location.X;
         const y = itemPayload.Location.Y;
-        const item_hash = hash32(item_class + name + quality + properties + container + (slot ? slot : ('' + x + y)));
-        const item_id = itemPayload.GUID;
+        const item_hash = hash32(item_id + item_class + name + quality + properties + container + (slot ? slot : ('' + x + y)));
 
-        if (!itemHashesBefore.includes(item_hash)) {
-            if (itemIdsBefore.includes(item_id)) {
-                removedItems.push(item_id);
-            }
+        const itemBeforeByHash = itemsBeforeByHash[item_hash];
 
-            addedItems.push({
-                update_time: time,
-                item_id,
-                item_class,
-                name,
-                base_name: itemPayload.BaseItem.trim(),
-                quality,
-                properties,
-                container,
-                slot,
-                x,
-                y,
-                width: itemPayload.Location.Width,
-                height: itemPayload.Location.Height,
-                item_hash
-            });
-        } else {
-            const removedIndex = removedItems.indexOf(item_id);
-
-            if (removedIndex !== -1) {
-                removedItems.splice(removedIndex, 1);
-            }
+        if (itemBeforeByHash && !removedItemHashes.includes(item_hash)) {
+            removedItemHashes.push(item_hash);
         }
+
+        addedItems.push({
+            update_time: time,
+            item_id,
+            item_class,
+            name,
+            base_name: itemPayload.BaseItem.trim(),
+            quality,
+            properties,
+            container,
+            slot,
+            x,
+            y,
+            width: itemPayload.Location.Width,
+            height: itemPayload.Location.Height,
+            item_hash
+        });
     }
 
     return {
-        removedItems,
+        removedItemHashes,
         addedItems
     };
 }
 
-export async function saveItemUpdates(characterId: number, { removedItems, addedItems }: ItemUpdates) {
-    if (removedItems.length) {
+export async function saveItemUpdates(characterId: number, { removedItemHashes, addedItems }: ItemUpdates) {
+    if (removedItemHashes.length) {
         await db.query(`
             DELETE FROM character_items WHERE character_id=$1
-            AND item_id IN (${removedItems.map((_, i) => `$${2 + i}`)})
-        `, [characterId, ...removedItems]);
+            AND item_hash IN (${removedItemHashes.map((_, i) => `$${2 + i}`)})
+        `, [characterId, ...removedItemHashes]);
     }
 
     if (addedItems.length) {

@@ -15,6 +15,10 @@ export async function getRaceUpdates(time: number, characterId: number, characte
     'SELECT * FROM race_characters WHERE character_id=%L AND finish_time IS NULL', characterId
   ));
 
+  if (!raceCharacters.length) {
+    return [];
+  }
+
   // Find race rules that should be re-checked by stat and quest updates
   const findRules = [];
   const updatedStats = Object.keys(characterUpdates);

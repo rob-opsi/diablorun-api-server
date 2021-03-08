@@ -14,7 +14,7 @@ router.post('/sync', async function (req, res) {
             res.status(500);
             res.send('Server error');
 
-            console.log(err);
+            console.log(err.stack);
         }
     }
 });
