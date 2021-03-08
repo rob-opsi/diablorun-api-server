@@ -1,4 +1,4 @@
-import { CharacterItem, CharacterSnapshot } from 'src/collections/characters';
+import { Character, CharacterItem, CharacterSnapshot } from 'src/collections/characters';
 import { Payload } from './payload';
 import db from '../services/db';
 import { hash32 } from 'farmhash';
@@ -44,7 +44,7 @@ function getItemSlot(container: CharacterItem["container"], inventoryTab: number
     return null;
 }
 
-export function getItemUpdates(time: number, payload: Payload, inventoryTab: number, before?: CharacterSnapshot): ItemUpdates {
+export function getItemUpdates(time: number, payload: Payload, inventoryTab: number, characterUpdates: Partial<Character>, before?: CharacterSnapshot): ItemUpdates {
     // Get items before update
     const itemsBefore = before ? before.items : [];
     const itemsBeforeById: { [id: string]: CharacterItem } = {};
@@ -57,16 +57,23 @@ export function getItemUpdates(time: number, payload: Payload, inventoryTab: num
 
     // Get removed item hashes
     const removedItemHashes = [];
-    const removedItemIds = [
-        ...(payload.RemovedItems || []),
-        ...(payload.Hireling?.RemovedItems || [])
-    ];
+    
+    if (characterUpdates.seed) {
+        for (const hash in itemsBeforeByHash) {
+            removedItemHashes.push(Number(hash));
+        }
+    } else {
+        const removedItemIds = [
+            ...(payload.RemovedItems || []),
+            ...(payload.Hireling?.RemovedItems || [])
+        ];
 
-    for (const itemId of removedItemIds) {
-        const itemBeforeById = itemsBeforeById[itemId];
+        for (const itemId of removedItemIds) {
+            const itemBeforeById = itemsBeforeById[itemId];
 
-        if (itemBeforeById) {
-            removedItemHashes.push(Number(itemBeforeById.item_hash));
+            if (itemBeforeById) {
+                removedItemHashes.push(Number(itemBeforeById.item_hash));
+            }
         }
     }
 

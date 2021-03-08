@@ -82,8 +82,8 @@ export async function sync(payload: Payload) {
 
     // Get updates
     const questUpdates = getQuestUpdates(time, payload, before);
-    const itemUpdates = getItemUpdates(time, payload, inventoryTab, before);
     const characterUpdates = getCharacterUpdates(time, payload, questUpdates, before);
+    const itemUpdates = getItemUpdates(time, payload, inventoryTab, characterUpdates, before);
 
     // Save updates
     let characterId: number;
