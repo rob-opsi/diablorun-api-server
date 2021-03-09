@@ -102,7 +102,7 @@ export function getCharacterUpdates(time: number, payload: Payload, questUpdates
   // Town visit counter
   if (!character) {
     updates.town_visits = 1;
-  } else if (payload.Area && !areas[character.area].town && (areas[payload.Area].town)) {
+  } else if (payload.Area && !(areas[character.area] && areas[character.area].town) && (areas[payload.Area] && areas[payload.Area].town)) {
     updates.town_visits = character.town_visits + 1;
   }
 
@@ -134,6 +134,13 @@ export function getCharacterUpdates(time: number, payload: Payload, questUpdates
     if (hellCount) updates.finished_hell_quests = (character ? character.finished_hell_quests : 0) + hellCount;
   }
 
+  // D2 process
+  if (payload.D2ProcessInfo) {
+    updates.d2_mod = payload.D2ProcessInfo.Type;
+    updates.d2_version = payload.D2ProcessInfo.Version;
+    updates.d2_args = payload.D2ProcessInfo.CommandLineArgs.join(' ');
+  }
+  
   return updates;
 }
 

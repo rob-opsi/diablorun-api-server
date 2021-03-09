@@ -27,3 +27,7 @@ ALTER TABLE characters ADD undead_kills integer DEFAULT 0;
 ALTER TABLE characters ADD demon_kills integer DEFAULT 0;
 ALTER TABLE characters ADD champion_kills integer DEFAULT 0;
 ALTER TABLE characters ADD unique_kills integer DEFAULT 0;
+
+ALTER TABLE characters ADD d2_mod text;
+ALTER TABLE characters ADD d2_version text;
+ALTER TABLE characters ADD d2_args text;

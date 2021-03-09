@@ -86,6 +86,11 @@ export interface Character {
   seed: number;
   seed_is_arg: boolean;
 
+  // process
+  d2_mod: string;
+  d2_version: string;
+  d2_args: string;
+  
   // user info
   user_id: number;
   user_name: string;

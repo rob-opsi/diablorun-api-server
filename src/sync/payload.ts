@@ -24,6 +24,12 @@ export interface Payload {
         Version: string;
     };
 
+    D2ProcessInfo?: {
+        Type: string;
+        Version: string;
+        CommandLineArgs: string[];
+    };
+
     Seed: number;
     SeedIsArg: boolean;
     IsExpansion?: boolean;
