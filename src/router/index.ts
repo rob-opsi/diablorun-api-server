@@ -1,4 +1,5 @@
-import { Router } from 'express';
+import 'express-async-errors';
+import { Router, Request, Response, NextFunction } from 'express';
 import * as bodyParser from 'body-parser';
 
 import * as users from './users';
@@ -21,5 +22,19 @@ router.use(races.router);
 router.use(speedruns.router);
 router.use(webhooks.router);
 router.use(snapshots.router);
+
+router.use((err: { status: number, message: string }, _req: Request, res: Response, _next: NextFunction) => {
+    if (err && err.status) {
+        res.status(err.status).send(err.message);
+        return;
+    }
+
+    if (err) {
+        console.log(err);
+        res.status(500).send('Server error');
+    }
+
+    res.status(404).send('Not found');
+});
 
 export default router;

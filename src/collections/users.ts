@@ -34,7 +34,7 @@ export async function getUserByApiKey(apiKey: string) {
     return await getUserByClause('api_key=$1', [apiKey]);
 }
 
-// Get user by api key
+// Get user by name or channel id
 export async function getUserByName(name: string) {
     return await getUserByClause('login=$1 OR twitch_id=$1', [name.toLowerCase()]);
 }
