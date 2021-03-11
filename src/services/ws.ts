@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 
 export async function broadcast(room: string, payload: any, twitchMessages: { channel: string, message: string }[] = []) {
-    await fetch(`http://${process.env.WS_HOSTNAME}`, {
+    const res = await fetch(process.env.WS_URL as string, {
         method: 'POST',
         body: JSON.stringify({
             secret: process.env.SECRET,
@@ -9,4 +9,6 @@ export async function broadcast(room: string, payload: any, twitchMessages: { ch
             twitchMessages
         })
     });
+
+    console.log(res.status);
 }
