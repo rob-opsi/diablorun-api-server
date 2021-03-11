@@ -5,9 +5,7 @@ export async function broadcast(room: string, payload: any, twitchMessages: { ch
         method: 'POST',
         body: JSON.stringify({
             secret: process.env.SECRET,
-            action: 'broadcast',
-            room,
-            payload: JSON.stringify(payload),
+            webMessages: [{ room, payload: JSON.stringify(payload) }],
             twitchMessages
         })
     });
