@@ -1,5 +1,5 @@
 import { Character, CharacterItem, CharacterSnapshot } from 'src/collections/characters';
-import { Payload } from './payload';
+import { Payload, ItemPayload } from './payload';
 import db from '../services/db';
 import { hash32 } from 'farmhash';
 
@@ -58,21 +58,51 @@ export function getItemUpdates(time: number, payload: Payload, inventoryTab: num
     // Get removed item hashes
     const removedItemHashes = [];
     
-    if (characterUpdates.seed) {
-        for (const hash in itemsBeforeByHash) {
-            removedItemHashes.push(Number(hash));
+    if (payload.DIApplicationInfo.Version === '0.6.9') {
+        if (characterUpdates.seed) {
+            for (const hash in itemsBeforeByHash) {
+                removedItemHashes.push(Number(hash));
+            }
+        } else {
+            const removedItemIds = [
+                ...(payload.RemovedItems || []),
+                ...(payload.Hireling?.RemovedItems || [])
+            ] as number[];
+
+            for (const itemId of removedItemIds) {
+                const itemBeforeById = itemsBeforeById[itemId];
+
+                if (itemBeforeById) {
+                    removedItemHashes.push(Number(itemBeforeById.item_hash));
+                }
+            }
         }
     } else {
-        const removedItemIds = [
+        const removedItems = [
             ...(payload.RemovedItems || []),
             ...(payload.Hireling?.RemovedItems || [])
-        ];
+        ] as ItemPayload[];
 
-        for (const itemId of removedItemIds) {
-            const itemBeforeById = itemsBeforeById[itemId];
+        for (const itemPayload of removedItems) {
+            const container = getItemContainer(itemPayload.Location.Container);
+            const slot = getItemSlot(container, inventoryTab, itemPayload.Location.BodyLocation);
+            const x = itemPayload.Location.X;
+            const y = itemPayload.Location.Y;
+            
+            const itemBefore = itemsBefore.find(item => {
+                if (item.container !== container) {
+                    return false;
+                }
 
-            if (itemBeforeById) {
-                removedItemHashes.push(Number(itemBeforeById.item_hash));
+                if (container === 'character' || container === 'hireling') {
+                    return item.slot === slot;
+                }
+
+                return item.x === x && item.y === y;
+            });
+
+            if (itemBefore) {
+                removedItemHashes.push(Number(itemBefore.item_hash));
             }
         }
     }

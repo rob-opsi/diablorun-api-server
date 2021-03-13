@@ -1,6 +1,4 @@
-import { CharacterSnapshot } from '../collections/characters';
-
-export interface AddedItem {
+export interface ItemPayload {
     GUID: number;
     Class: number;
     BaseItem: string;
@@ -80,8 +78,8 @@ export interface Payload {
     }
 
     InventoryTab?: number;
-    AddedItems?: AddedItem[];
-    RemovedItems?: number[];
+    AddedItems?: ItemPayload[];
+    RemovedItems?: ItemPayload[] | number[];
 
     Hireling?: {
         Name?: string;
@@ -96,9 +94,9 @@ export interface Payload {
         PoisonResist?: number;
         SkillIds?: number[];
 
-        Items?: AddedItem[];
-        AddedItems?: AddedItem[];
-        RemovedItems?: number[];
+        Items?: ItemPayload[];
+        AddedItems?: ItemPayload[];
+        RemovedItems?: ItemPayload[] | number[];
     }
 
     KilledMonsters?: {

@@ -64,7 +64,7 @@ router.post('/webhooks/twitch-command', async function (req, res) {
                 if (message) {
                     res.json([{ channel, message }]);
                 } else {
-                    res.json({});
+                    res.json([]);
                 }
                 return;
             }
