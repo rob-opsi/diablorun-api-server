@@ -102,7 +102,7 @@ router.get('/races/:id', async function (req, res) {
                 SELECT DISTINCT ON (characters.user_id) 
                 characters.*, race_characters.*, ${time} - race_characters.start_time AS time FROM race_characters
                 INNER JOIN characters ON characters.id = race_characters.character_id
-                WHERE race_characters.race_id=$1 AND race_characters.finish_time IS NULL
+                WHERE race_characters.race_id=$1 AND race_characters.finish_time IS NULL AND characters.update_time > ${time - 60000}
                 ORDER BY characters.user_id, characters.update_time DESC
             ), rankings AS (
                 SELECT latest_characters.*,

@@ -106,7 +106,7 @@ export async function sync(payload: Payload) {
     await saveItemUpdates(characterId, itemUpdates);
 
     // When a new character is created, join public races where entry conditions are fulfilled
-    if (!before) {
+    if (!before && payload.Experience === 0) {
         const races = await getRacesForCharacterEntry(characterUpdates);
 
         await db.query(sqlFormat(
