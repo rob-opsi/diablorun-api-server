@@ -4,7 +4,6 @@ import { sync } from '../sync';
 export const router = Router();
 
 router.post('/sync', async function (req, res) {
-    console.log(req.body);
     try {
         res.send(await sync(req.body));
     } catch (err) {

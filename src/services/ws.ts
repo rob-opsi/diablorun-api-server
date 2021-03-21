@@ -9,6 +9,4 @@ export async function broadcast(room: string, payload: any, twitchMessages: { ch
             twitchMessages
         })
     });
-
-    console.log(res.status);
 }
