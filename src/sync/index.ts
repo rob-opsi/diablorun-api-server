@@ -73,7 +73,7 @@ export async function sync(payload: Payload) {
         }
     }
 
-    // Get active inventory tab
+    // Get active inventory tab and difficulty
     let inventoryTab = before ? before.character.inventory_tab : 0;
 
     if (payload.InventoryTab !== undefined) {

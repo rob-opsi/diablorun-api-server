@@ -2,9 +2,32 @@ import { CharacterQuest, CharacterSnapshot } from '../collections/characters';
 import { Payload } from './payload';
 import db from '../services/db';
 
+const { difficulties } = require('@diablorun/diablorun-data');
+
 export function getQuestUpdates(time: number, payload: Payload, before?: CharacterSnapshot) {
     const completedQuests = payload.CompletedQuests;
     const questUpdates: Partial<CharacterQuest>[] = [];
+
+    if (payload.KilledMonsters) {
+        const difficulty = (payload.Difficulty !== undefined) ? difficulties[payload.Difficulty] : before?.character.difficulty;
+        const questFromKill = [
+            { monsterClass: 156, questId: 12 },
+            { monsterClass: 211, questId: 28 },
+            { monsterClass: 242, questId: 44 },
+            { monsterClass: 243, questId: 52 },
+            { monsterClass: 544, questId: 80 }
+        ];
+
+        for (const { monsterClass, questId } of questFromKill) {
+            if (payload.KilledMonsters.find(kill => kill.Class === monsterClass)) {
+                switch (difficulty) {
+                    case 'normal': completedQuests?.Normal.push(questId); break;
+                    case 'nightmare': completedQuests?.Nightmare.push(questId); break;
+                    case 'hell': completedQuests?.Hell.push(questId); break;
+                }
+            }
+        }
+    }
 
     if (!completedQuests) {
         return questUpdates;
