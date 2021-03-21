@@ -48,3 +48,4 @@ CREATE INDEX speedruns_hero ON speedruns USING btree (hero);
 CREATE INDEX speedruns_seconds_played ON speedruns USING btree (seconds_played);
 CREATE INDEX speedruns_run_time ON speedruns USING btree (run_time);
 CREATE INDEX speedruns_submit_time ON speedruns USING btree (submit_time);
+CREATE UNIQUE INDEX speedruns_speedrun_id ON speedruns(speedrun_id);
