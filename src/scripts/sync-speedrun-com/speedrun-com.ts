@@ -87,7 +87,7 @@ export function getCategoryId({ values }: SpeedrunComRun): number {
 }
 
 export function isHC({ values }: SpeedrunComRun) {
-    return values['kn04xp7l'] === '5lmd0vjl' || values['onv2eorl'] === 'jq637ynq';
+    return values['kn04xp7l'] === '81wnxzo1' || values['onv2eorl'] === '5lmzn8yq';
 }
 
 export function getPlayersCategory({ values }: SpeedrunComRun) {
