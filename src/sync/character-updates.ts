@@ -151,4 +151,25 @@ export async function saveCharacterUpdates(characterId: number, updates: Partial
     UPDATE characters SET ${updatedKeys.map((key, i) => `${key}=$${1 + i}`)}
     WHERE id=$${updatedKeys.length + 1}
   `, [...updatedKeys.map(key => updates[key]), characterId]);
+
+  await db.query(`
+    INSERT INTO characters_log
+    SELECT
+      id AS character_id, update_time, seconds_played, in_game_time,
+      level, experience, strength, dexterity, vitality, energy,
+      fire_res, cold_res, light_res, poison_res,
+      gold, gold_stash, life, life_max, mana, mana_max,
+      seed, seed_is_arg, inventory_tab,
+      hireling_name, hireling_class,
+      hireling_level, hireling_experience,
+      hireling_strength, hireling_dexterity,
+      hireling_fire_res, hireling_cold_res, hireling_light_res, hireling_poison_res,
+      hireling_skill_ids,
+      area, difficulty, players, deaths,
+      fcr, frw, fhr, ias, mf, gold_total, town_visits,
+      finished_normal_quests, finished_nightmare_quests, finished_hell_quests,
+      total_kills, animal_kills, undead_kills, demon_kills, champion_kills, unique_kills
+    FROM characters WHERE id=$1
+    ON CONFLICT DO NOTHING
+  `, [characterId]);
 }
