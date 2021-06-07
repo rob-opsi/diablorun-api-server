@@ -155,7 +155,9 @@ export async function saveCharacterUpdates(characterId: number, updates: Partial
   await db.query(`
     INSERT INTO characters_log
     SELECT
-      id AS character_id, update_time, seconds_played, in_game_time,
+      id AS character_id,
+      (update_time - update_time % 10) AS update_time,
+      seconds_played, in_game_time,
       level, experience, strength, dexterity, vitality, energy,
       fire_res, cold_res, light_res, poison_res,
       gold, gold_stash, life, life_max, mana, mana_max,
