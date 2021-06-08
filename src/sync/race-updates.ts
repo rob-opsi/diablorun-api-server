@@ -1,7 +1,7 @@
-import { Character, CharacterQuest } from "../collections/characters";
+import { Character, CharacterQuest, RaceCharacter, RaceCharacterCheckpoint } from "../types";
 import db from '../services/db';
 import * as sqlFormat from 'pg-format';
-import { findRaceCharacterCheckpoints, findRaceCharacters, findRaceRules, RaceCharacter, RaceCharacterCheckpoint } from "../collections/races";
+import { findRaceCharacterCheckpoints, findRaceCharacters, findRaceRules } from "../collections/races";
 
 interface RaceUpdate {
   raceId: number;

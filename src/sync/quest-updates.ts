@@ -1,8 +1,7 @@
-import { CharacterQuest, CharacterSnapshot } from '../collections/characters';
+import { CharacterQuest, CharacterSnapshot } from '../types';
 import { Payload } from './payload';
 import db from '../services/db';
-
-const { difficulties } = require('@diablorun/diablorun-data');
+import { difficulties } from '@diablorun/diablorun-data';
 
 export function getQuestUpdates(time: number, payload: Payload, before?: CharacterSnapshot) {
     let completedQuests = payload.CompletedQuests;

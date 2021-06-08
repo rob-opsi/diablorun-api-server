@@ -1,6 +1,6 @@
 import * as dotenv from 'dotenv';
 import { getUserByApiKey } from '../collections/users';
-import { Character, CharacterSnapshot } from '../collections/characters';
+import { Character, CharacterSnapshot } from '../types';
 import db from '../services/db';
 import { getItemUpdates, saveItemUpdates } from './item-updates';
 import { Payload } from './payload';
@@ -128,7 +128,7 @@ export async function sync(payload: Payload) {
         itemUpdates,
         questUpdates,
         raceUpdates
-    }, []);
+    });
 
     for (const { raceId, raceCharacterUpdates, removeCheckpoints, addCheckpoints } of raceUpdates) {
         await broadcast(`race/${raceId}`, {

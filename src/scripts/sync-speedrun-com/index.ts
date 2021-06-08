@@ -4,7 +4,7 @@ config();
 import db from '../../services/db';
 import * as sqlFormat from 'pg-format';
 import * as speedrunCom from './speedrun-com';
-import { Speedrun, SpeedrunUser } from 'src/collections/speedruns';
+import { Speedrun, SpeedrunUser } from 'src/types';
 
 async function run() {
     await db.connect();

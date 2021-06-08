@@ -1,16 +1,22 @@
 import fetch from 'node-fetch';
 import * as shortid from 'shortid';
 import { URLSearchParams } from 'url';
-import { getCharacterSnapshot, getCharacters } from './characters';
+import { getCharacters } from './characters';
 import { getSpeedruns } from './speedruns';
 import { Router } from 'express';
 import db from '../services/db';
+import { getCharacterSnapshotByUserId } from './snapshots';
 
 export const router = Router();
 
 // Create or update user
 router.post('/users', async function (req, res) {
-    const { access_token } = req.body;
+  const { access_token } = req.body;
+
+  if (!access_token) {
+    res.json(null);
+    return;
+  }
 
   try {
     const twitch = await fetch('https://api.twitch.tv/helix/users/', {
@@ -21,6 +27,12 @@ router.post('/users', async function (req, res) {
     });
 
     const { data } = await twitch.json();
+
+    if (!data) {
+      res.json(null);
+      return;
+    }
+    
     const { id, login, display_name, offline_image_url, profile_image_url } = data[0];
     let user;
 
@@ -73,7 +85,7 @@ router.post('/users', async function (req, res) {
 
 // Get user by name
 export async function getUserByName(username: string) {
-    const user = await db.query(`
+  const user = await db.query(`
     SELECT
       id,
       name,
@@ -90,23 +102,9 @@ export async function getUserByName(username: string) {
   return user.rows[0];
 }
 
-// Get user's last updated character
-export async function getLastUpdatedCharacter(userId: string) {
-    const lastUpdatedCharacter = await db.query(`
-    SELECT id FROM characters
-    WHERE user_id=$1 ORDER BY update_time DESC LIMIT 1
-  `, [userId]);
-
-  if (!lastUpdatedCharacter.rows.length) {
-    return null;
-  }
-
-  return await getCharacterSnapshot(lastUpdatedCharacter.rows[0].id);
-}
-
 // Get currently active users
 router.get('/active-users', async function (req, res) {
-    const time = Math.floor(Date.now()/1000) - 60;
+  const time = Math.floor(Date.now() / 1000) - 60;
 
   const { rows } = await db.query(`
     WITH active_characters AS (
@@ -130,30 +128,13 @@ router.get('/active-users', async function (req, res) {
   res.json(rows);
 });
 
-// Get user by name and return their last updated character
-router.get('/users/:name', async function (req, res) {
-  const user = await getUserByName(req.params.name);
-
-  if (!user) {
-    throw { status: 404, message: 'User not found' };
-  }
-
-  const lastUpdatedCharacter = await getLastUpdatedCharacter(user.id);
-
-  if (!lastUpdatedCharacter) {
-    throw { status: 404, message: 'User has no characters' };
-  }
-
-  res.json(lastUpdatedCharacter);
-});
-
 // Get data for user profile
 router.get('/users/:name/profile', async function (req, res) {
   const user = await getUserByName(req.params.name);
 
   res.json({
     user,
-    lastUpdate: await getLastUpdatedCharacter(user.id),
+    lastUpdate: await getCharacterSnapshotByUserId(user.id),
     characters: await getCharacters({
       user_id: user.id,
       limit: 5

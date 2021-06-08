@@ -1,12 +1,11 @@
 import { Router } from 'express';
 import db from '../services/db';
-import { commands } from '../services/twitch-commands';
 
 export const router = Router();
 
 // Patreon
 router.post('/webhooks/patreon', async function (req, res) {
-        const id = req.body.data.relationships.patron.data.id;
+    const id = req.body.data.relationships.patron.data.id;
     const amount = req.body.data.attributes.amount_cents;
 
     switch (req.header('x-patreon-event')) {
@@ -38,43 +37,7 @@ router.get('/twitch-bot', async function (_req, res) {
     `);
 
     res.json({
-        commands: Object.keys(commands),
+        // commands: Object.keys(commands),
         channels: patreons.rows.map(patreon => patreon.name)
     });
 });
-
-// Twitch command
-router.post('/webhooks/twitch-command', async function (req, res) {
-    try {
-        const channel = req.body.channel;
-        const username = channel.substr(1);
-        const parts = req.body.message.split(' ');
-
-        let command = '';
-
-        for (let i = 0; i < parts.length; ++i) {
-            command += (i ? ' ' : '') + parts[i].toLowerCase();
-
-            if (commands.hasOwnProperty(command)) {
-                const args = parts.slice(i + 1);
-                const message = await commands[command](
-                    username, args, req.body.from
-                );
-
-                if (message) {
-                    res.json([{ channel, message }]);
-                } else {
-                    res.json([]);
-                }
-                return;
-            }
-        }
-
-        throw { message: 'invalid command' };
-    } catch (err) {
-        res.status(400);
-        res.json({ err: err.message });
-    }
-});
-
-module.exports = { router };

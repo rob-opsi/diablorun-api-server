@@ -126,34 +126,6 @@ router.get('/races/:id', async function (req, res) {
         delete race.rows[0].token;
     }
 
-    /*
-    // Get recent notifications
-    const notifications = await db.query(`
-        SELECT * FROM race_notifications
-        WHERE race_id=$1
-        ORDER BY time DESC LIMIT 4
-    `, [id]);
-
-    // Get points statistics
-    const pointsLog = await db.query(`
-        WITH stats_log_indexed AS (
-            SELECT
-                characters.user_id,
-                stats_log.update_time,
-                stats_log.value,
-                ROW_NUMBER() OVER (ORDER BY user_id, stats_log.update_time) AS index
-            FROM stats_log
-            LEFT JOIN characters ON characters.id = stats_log.character_id
-            WHERE stats_log.race_id=$1 AND stats_log.stat=$2 AND stats_log.update_time>$3
-        )
-        SELECT user_id, update_time, value FROM stats_log_indexed
-        WHERE index % (1 + (
-        SELECT COUNT(*) FROM stats_log
-        WHERE race_id=$1 AND stat=$2
-        )::integer / $4) = 0
-    `, [id, 'points', race.rows[0].start_time, 50 * Math.max(1, characters.rows.length)]);
-    */
-
     // Value
     res.json({
         time: new Date().getTime(),
@@ -331,7 +303,7 @@ router.post('/races', async function (req, res) {
             },
             rules: race.update_rules ? race.rules : undefined
         }
-    }, twitchMessages);
+    });
 
     res.json(race);
 });

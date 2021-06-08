@@ -2,10 +2,11 @@ import { Router } from 'express';
 import db from '../services/db';
 import * as sql from 'pg-format';
 import { getUserByName } from '../collections/users';
+import { CharacterSnapshot } from 'src/types';
 
 export const router = Router();
 
-async function getCharacterSnapshot(clause: string) {
+async function getCharacterSnapshot(clause: string): Promise<CharacterSnapshot> {
   const characters = await db.query(`
     SELECT
       characters.*,
@@ -44,20 +45,37 @@ async function getCharacterSnapshot(clause: string) {
   };
 }
 
-// Get latest character snapshot by user name
-router.get('/snapshots/users/:name', async function (req, res) {
-  const user = await getUserByName(req.params.name);
+export async function getCharacterSnapshotById(id: number) {
+  return await getCharacterSnapshot(sql('characters.id=%L', id));
+}
+
+export async function getCharacterSnapshotByUserId(id: number) {
+  return await getCharacterSnapshot(sql(`characters.user_id=%L ORDER BY characters.update_time DESC LIMIT 1`, id));
+}
+
+export async function getCharacterSnapshotByUsername(username: string) {
+  const user = await getUserByName(username);
 
   if (!user) {
+    return;
+  }
+
+  return await getCharacterSnapshotByUserId(user.id);
+}
+
+// Get latest character snapshot by user name
+router.get('/snapshots/users/:name', async function (req, res) {
+  const snapshot = await getCharacterSnapshotByUsername(req.params.name);
+
+  if (!snapshot) {
     throw { status: 404, message: 'User not found' };
   }
 
-  const snapshot = await getCharacterSnapshot(`characters.user_id=${user.id} ORDER BY characters.update_time DESC LIMIT 1`);
   res.json(snapshot);
 });
 
 // Get character snapshot by id
 router.get('/snapshots/characters/:id', async function (req, res) {
-  const snapshot = await getCharacterSnapshot(sql('characters.id=%L', req.params.id));
+  const snapshot = await getCharacterSnapshotById(parseInt(req.params.id));
   res.json(snapshot);
 });

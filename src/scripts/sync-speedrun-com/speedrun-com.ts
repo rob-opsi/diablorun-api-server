@@ -1,8 +1,7 @@
 import fetch from 'node-fetch';
 import db from '../../services/db';
 import * as sqlFormat from 'pg-format';
-import { Character } from "src/collections/characters";
-import { Speedrun, SpeedrunUser } from 'src/collections/speedruns';
+import { Character, Speedrun, SpeedrunUser } from 'src/types';
 
 /*
 category (5) ["7kjqovgd", "5dw89pgd", "wkpm98jk", "w20g1v5k", "jdz9zng2"]

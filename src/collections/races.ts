@@ -1,42 +1,5 @@
 import db from '../services/db';
-import { Character } from './characters';
-
-export interface Race {
-  id: number;
-  name: string;
-}
-
-export interface RaceRule {
-  id: number;
-  race_id: number;
-  context: 'points' | 'finish_conditions';
-  amount: number;
-  type: 'quest' | 'per' | 'for';
-  counter: number;
-  stat: keyof Character;
-  difficulty: Character["difficulty"];
-  quest_id: number;
-  time_type: 'race' | 'state';
-  time_seconds: number;
-  claimed: boolean;
-}
-
-export interface RaceCharacter {
-  race_id: number;
-  character_id: number;
-  start_time: number;
-  update_time: number;
-  finish_time: number | null;
-  points: number;
-}
-
-export interface RaceCharacterCheckpoint {
-  race_id: number;
-  character_id: number;
-  rule_id: number;
-  update_time: number;
-  points: number;
-}
+import { Character, Race, RaceRule, RaceCharacter, RaceCharacterCheckpoint } from '../types';
 
 // Find races where a character fulfils entry conditions
 export async function getRacesForCharacterEntry(character: Partial<Character>): Promise<Race[]> {

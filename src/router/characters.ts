@@ -1,69 +1,8 @@
 import { Router } from 'express';
 import db from '../services/db';
 import * as sql from 'pg-format';
-const { itemSlots } = require('@diablorun/diablorun-data');
 
 export const router = Router();
-
-// Get character data by id
-export async function getCharacterSnapshot(id: number) {
-    const [character, items, checkpoints] = await Promise.all([
-    await db.query(`
-      SELECT
-        characters.*,
-        users.name AS user_name,
-        users.country_code AS user_country_code,
-        users.dark_color_from AS user_color,
-        users.profile_image_url AS user_profile_image_url
-      FROM characters
-      INNER JOIN users ON characters.user_id = users.id
-      WHERE characters.id=$1
-    `, [id]),
-    await db.query(`
-      SELECT * FROM items WHERE character_id=$1
-    `, [id]),
-    await db.query(`
-      SELECT
-        character_checkpoints.*,
-        race_rules.type
-      FROM character_checkpoints
-      INNER JOIN race_rules ON character_checkpoints.rule_id = race_rules.id
-      WHERE character_checkpoints.character_id=$1 AND race_rules.type != 'per'
-      ORDER BY update_time DESC LIMIT 10
-    `, [id])
-  ]);
-
-  if (!character.rows.length) {
-    throw { status: 404, message: 'Character not found' };
-  }
-
-  for (const slot of itemSlots) {
-    character.rows[0][slot] = null;
-    character.rows[0][`hireling_${slot}`] = null;
-  }
-
-  for (const item of items.rows) {
-    if (item.container === 'character') {
-      character.rows[0][item.slot] = item;
-    } else if (item.container === 'hireling') {
-      character.rows[0][`hireling_${item.slot}`] = item;
-    }
-  }
-
-  return {
-    character: character.rows[0],
-    checkpoints: checkpoints.rows
-  };
-}
-
-// Get character by id
-router.get('/characters/:id', async function (req, res) {
-  try {
-    res.json(await getCharacterSnapshot(parseInt(req.params.id)));
-  } catch (err) {
-    res.sendStatus(404);
-  }
-});
 
 // Get character log by character id
 const allowedLogColumns = [
@@ -201,6 +140,8 @@ router.delete('/characters/:id', async function (req, res) {
 
   await db.query(`DELETE FROM items WHERE character_id=$1`, [req.params.id]);
   await db.query(`DELETE FROM quests WHERE character_id=$1`, [req.params.id]);
+  await db.query(`DELETE FROM characters_log WHERE character_id=$1`, [req.params.id]);
+  await db.query(`DELETE FROM race_characters WHERE character_id=$1`, [req.params.id]);
   await db.query(`DELETE FROM characters WHERE id=$1`, [req.params.id]);
 
   res.sendStatus(200);

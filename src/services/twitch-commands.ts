@@ -1,3 +1,4 @@
+/*
 import * as moment from 'moment';
 import millify from 'millify';
 import db from './db';
@@ -475,3 +476,4 @@ addRecipeCommand("socket shield", "Socket Shield: Tal + Amn + Perfect Ruby");
 
 // Other
 addRecipeCommand("forge", "Up to Amn in normal, Sol to Um in nightmare and Hel to Gul in hell.");
+*/

@@ -1,4 +1,4 @@
-import { Character, CharacterItem, CharacterSnapshot } from 'src/collections/characters';
+import { Character, CharacterItem, CharacterSnapshot } from '../types';
 import { Payload, ItemPayload } from './payload';
 import db from '../services/db';
 import { hash32 } from 'farmhash';

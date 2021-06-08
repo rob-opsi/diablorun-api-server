@@ -1,8 +1,7 @@
-import { Character, CharacterQuest, CharacterSnapshot } from "../collections/characters";
+import { Character, CharacterQuest, CharacterSnapshot } from "../types";
 import { Payload } from "./payload";
 import db from '../services/db';
-
-const { heroes, areas, difficulties } = require('@diablorun/diablorun-data');
+import { heroes, areas, difficulties } from '@diablorun/diablorun-data';
 
 export function getCharacterUpdates(time: number, payload: Payload, questUpdates: Partial<CharacterQuest>[], before?: CharacterSnapshot) {
   const updates: Partial<Character> = {};
@@ -17,9 +16,9 @@ export function getCharacterUpdates(time: number, payload: Payload, questUpdates
 
   // Simple stats
   if (payload.Area !== undefined) updates.area = payload.Area;
-  if (payload.Difficulty !== undefined) updates.difficulty = difficulties[payload.Difficulty];
+  if (payload.Difficulty !== undefined) updates.difficulty = difficulties[payload.Difficulty] as any;
   if (payload.PlayersX !== undefined) updates.players = payload.PlayersX;
-  if (payload.CharClass !== undefined) updates.hero = heroes[payload.CharClass].id;
+  if (payload.CharClass !== undefined) updates.hero = heroes[payload.CharClass].id as any;
   if (payload.IsHardcore !== undefined) updates.hc = payload.IsHardcore;
   if (payload.IsExpansion !== undefined) updates.lod = payload.IsExpansion;
   if (payload.IsDead !== undefined) updates.dead = payload.IsDead;

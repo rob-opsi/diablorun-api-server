@@ -1,14 +1,5 @@
 import db from '../services/db';
-import { getCharacterSnapshot } from './characters';
-
-export interface User {
-    id: number;
-    login: string;
-    name: string;
-    country_code: string;
-    color: string;
-    profile_image_url: string;
-}
+import { User } from '../types';
 
 // Get user by clause
 async function getUserByClause(clause: string, values?: any[]): Promise<User | undefined> {
@@ -51,10 +42,4 @@ export async function getLastUpdatedCharacterId(userId: number) {
     }
 
     return rows[0].id;
-}
-
-// Get user's last updated character snapshot
-export async function getLastUpdatedCharacterSnapshot(userId: number) {
-    const characterId = await getLastUpdatedCharacterId(userId);
-    return await getCharacterSnapshot(characterId);
 }
