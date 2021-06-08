@@ -39,16 +39,22 @@ export async function getUserByName(name: string) {
     return await getUserByClause('login=$1 OR twitch_id=$1', [name.toLowerCase()]);
 }
 
-// Get user's last updated character snapshot
-export async function getLastUpdatedCharacterSnapshot(userId: number) {
-    const lastUpdatedCharacter = await db.query(`
-    SELECT id FROM characters
-    WHERE user_id=$1 ORDER BY update_time DESC LIMIT 1
-  `, [userId]);
+// Get user's last updated character id
+export async function getLastUpdatedCharacterId(userId: number) {
+    const { rows } = await db.query(`
+        SELECT id FROM characters
+        WHERE user_id=$1 ORDER BY update_time DESC LIMIT 1
+    `, [userId]);
 
-    if (!lastUpdatedCharacter.rows.length) {
+    if (!rows.length) {
         return;
     }
 
-    return await getCharacterSnapshot(lastUpdatedCharacter.rows[0].id);
+    return rows[0].id;
+}
+
+// Get user's last updated character snapshot
+export async function getLastUpdatedCharacterSnapshot(userId: number) {
+    const characterId = await getLastUpdatedCharacterId(userId);
+    return await getCharacterSnapshot(characterId);
 }

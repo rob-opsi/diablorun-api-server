@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import db from '../services/db';
+import * as sql from 'pg-format';
 const { itemSlots } = require('@diablorun/diablorun-data');
 
 export const router = Router();
@@ -64,39 +65,56 @@ router.get('/characters/:id', async function (req, res) {
   }
 });
 
-// Get character statistics by id
-async function getStatValues(id: number, stat: string) {
-    const { rows } = await db.query(`
-    WITH stats_log_indexed AS (
-      SELECT *, ROW_NUMBER() OVER (ORDER BY in_game_time) AS index
-      FROM stats_log WHERE character_id=$1 AND stat=$2
-    )
-    SELECT update_time, in_game_time, value
-    FROM stats_log_indexed
-    WHERE index % (1 + (
-      SELECT COUNT(*) FROM stats_log
-      WHERE character_id=$1 AND stat=$2
-    ) / 50) = 0
-  `, [id, stat]);
+// Get character log by character id
+const allowedLogColumns = [
+  'level', 'experience',
+  'strength', 'dexterity', 'vitality', 'energy',
+  'fire_res', 'cold_res', 'light_res', 'poison_res',
+  'fcr', 'frw', 'fhr', 'ias', 'mf',
+  'life', 'life_max', 'mana', 'mana_max',
+  'gold', 'gold_stash', 'gold_total',
+  'deaths', 'town_visits',
 
-  return rows;
-}
+  'seed', 'seed_is_arg', 'inventory_tab',
+  'area', 'difficulty', 'players',
+  'finished_normal_quests', 'finished_nightmare_quests', 'finished_hell_quests',
 
-router.get('/characters/:id/statistics', async function (req, res) {
-  const [experience, gold_total] = await Promise.all([
-    await getStatValues(parseInt(req.params.id), 'experience'),
-    await getStatValues(parseInt(req.params.id), 'gold_total')
-  ]);
+  'total_kills', 'champion_kills', 'unique_kills',
+  'animal_kills', 'undead_kills', 'demon_kills',
 
-  res.json({
-    experience,
-    gold_total
-  });
+  'hireling_name', 'hireling_class', 'hireling_skill_ids',
+  'hireling_level', 'hireling_experience',
+  'hireling_strength', 'hireling_dexterity',
+  'hireling_fire_res', 'hireling_cold_res', 'hireling_light_res', 'hireling_poison_res'
+];
+
+router.get('/characters/:id/log', async function (req, res) {
+  const columns = (req.query.columns as string || 'level,experience,gold_total').split(',').filter(
+    column => allowedLogColumns.includes(column)
+  );
+  
+  let query = sql(
+    `SELECT update_time, in_game_time, ${columns} FROM characters_log WHERE character_id=%L`,
+    req.params.id
+  );
+
+  if (req.query.before) {
+    query += sql(' AND update_time < %L', req.query.before);
+  }
+
+  if (req.query.after) {
+    query += sql(' AND update_time > %L', req.query.after);
+  }
+  
+  query += ' ORDER BY update_time ASC';
+
+  const log = await db.query(query);
+  res.json(log.rows);
 });
 
 // Get characters by query
 export async function getCharacters(query: any) {
-    let userId;
+  let userId;
   let offsetFilter = '';
 
   if (query.user_id) {
