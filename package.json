@@ -10,7 +10,8 @@
     "test": "ts-mocha --paths src/**/*.spec.ts",
     "test-watch": "nodemon --watch 'src/**/*' --exec ts-mocha --paths src/**/*.spec.ts",
     "build": "npx tsc",
-    "sync-speedrun-com": "ts-node src/scripts/sync-speedrun-com/index.ts"
+    "sync-speedrun-com": "ts-node src/scripts/sync-speedrun-com.ts",
+    "categorize-speedrun-com": "ts-node src/scripts/categorize-speedrun-com.ts"
   },
   "author": "",
   "license": "ISC",

@@ -1,7 +1,7 @@
 import { config } from 'dotenv';
 config();
 
-import db from '../../services/db';
+import db from '../services/db';
 import * as sqlFormat from 'pg-format';
 import * as speedrunCom from './speedrun-com';
 import { Speedrun, SpeedrunUser } from 'src/types';

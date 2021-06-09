@@ -192,7 +192,6 @@ export interface Speedrun {
     speedrun_user_id: string | null;
 }
 
-// Speedrun.com user
 export interface SpeedrunUser {
     id: string;
     user_id: number | null;
@@ -208,4 +207,100 @@ export interface SpeedrunUser {
     youtube: string | null;
     twitter: string | null;
     speedrunslive: string | null;
+}
+
+export interface SpeedrunComUserResponse {
+    data: {
+        id: string;
+        weblink: string;
+
+        names: {
+            international: string;
+        };
+
+        'name-style': {
+            style: 'solid' | 'gradient';
+            color?: {
+                light: string;
+                dark: string;
+            }
+            'color-from'?: {
+                light: string;
+                dark: string;
+            };
+            'color-to'?: {
+                light: string;
+                dark: string;
+            }
+        };
+
+        location?: {
+            country: {
+                code: string;
+            }
+        };
+
+        twitch?: {
+            uri: string;
+        };
+
+        hitbox?: {
+            uri: string;
+        };
+
+        youtube?: {
+            uri: string;
+        };
+
+        twitter?: {
+            uri: string;
+        };
+
+        speedrunslive?: {
+            uri: string;
+        };
+    };
+}
+
+export interface SpeedrunComRun {
+    id: string;
+    weblink: string;
+    date: string;
+    submitted: string;
+    comment: string | null;
+
+    players: {
+        rel: 'user' | 'guest';
+        id: string;
+    }[];
+
+    times: {
+        primary_t: number;
+        realtime_t: number;
+        realtime_noloads_t: number;
+        ingame_t: number;
+    };
+
+    category: "jdzepoxd" | "02q987zk" | "824lm93d" | "9d8ojnq2" | "xd113q8d" | "zd3vlrn2" | "9d84mq6k" | "7kj3my42" | "5dw89pgd" | "w20g1v5k";
+    values: {
+        "gnxj216l"?: "gq70xjnl" | "21gvp8x1";
+        "ylq6ow38"?: "p12r0m7l" | "81pv5og1" | "xqk2n0nq" | "gq70xjvl" | "21gvp8n1" | "jqz83pgq" | "klrv2pjq";
+        "2lgrgren"?: "21gyvdo1" | "4lx3rpgl" | "81438ykq" | "5led9jm1" | "xqk7y4yl" | "4lx3jngl" | "814e4vkl" | "p12em571" | "klr4wkoq";
+        "0nw709d8"?: "klrvr40q" | "21d9mg3q";
+        "p854347l"?: "0q5kynvq" | "4lx3703l";
+        "e8mmz2x8"?: "klryrn2q" | "81wrepml";
+    };
+}
+
+export interface SpeedrunComRunsResponse {
+    data: SpeedrunComRun[];
+    pagination: {
+        offset: number;
+        max: number;
+        size: number;
+        links: {
+            rel: 'next';
+            uri: string;
+        }[];
+    }
 }
