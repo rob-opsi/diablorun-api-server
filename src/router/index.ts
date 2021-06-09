@@ -10,6 +10,7 @@ import * as speedruns from './speedruns';
 import * as webhooks from './webhooks';
 import * as sync from './sync';
 import * as snapshots from './snapshots';
+import * as ladder from './ladder';
 
 const router = Router();
 
@@ -22,6 +23,7 @@ router.use(races.router);
 router.use(speedruns.router);
 router.use(webhooks.router);
 router.use(snapshots.router);
+router.use(ladder.router);
 
 router.use((err: { status: number, message: string }, _req: Request, res: Response, _next: NextFunction) => {
     if (err && err.status) {

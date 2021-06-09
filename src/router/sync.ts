@@ -5,6 +5,10 @@ export const router = Router();
 
 router.post('/sync', async function (req, res) {
     try {
+        if (process.env.NODE_ENV === 'development') {
+            console.log(req.body);
+        }
+        
         res.send(await sync(req.body));
     } catch (err) {
         if (err.status) {

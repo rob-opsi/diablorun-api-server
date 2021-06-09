@@ -6,11 +6,19 @@ import { Character, Speedrun, SpeedrunUser, SpeedrunComUserResponse, SpeedrunCom
 export const gameId = 'yd4opx1e'; // Diablo II: Lord of Destruction
 
 export function getCategoryId({ category }: SpeedrunComRun): number {
+    if (category === "7kj3my42") {
+        return 5; // Seeded Hell
+    }
+
+    if (category == "9d84mq6k") {
+        return 4; // Seeded Normal
+    }
+
     if (category === "5dw89pgd") {
         return 3; // Pacifist
     }
 
-    if (category === "9d8ojnq2" || category === "xd113q8d" || category === "zd3vlrn2" || category === "7kj3my42") {
+    if (category === "9d8ojnq2" || category === "xd113q8d" || category === "zd3vlrn2") {
         return 2; // Hell
     }
 

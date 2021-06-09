@@ -66,11 +66,19 @@ async function run() {
         const keys = Object.keys(speedrun) as (keyof Speedrun)[];
         const values = keys.map(key => speedrun[key]);
 
-        await db.query(sqlFormat(`
-            INSERT INTO speedruns (${keys}) VALUES (${keys.map((_, i) => `%${i + 1}$L`)})
-            ON CONFLICT (speedrun_id) DO UPDATE SET ${keys.map((key, i) => `${key}=%${i + 1}$L`)}
-        `, ...values));
+        try {
+            await db.query(sqlFormat(`
+                INSERT INTO speedruns (${keys}) VALUES (${keys.map((_, i) => `%${i + 1}$L`)})
+                ON CONFLICT (speedrun_id) DO UPDATE SET ${keys.map((key, i) => `${key}=%${i + 1}$L`)}
+            `, ...values));
+        } catch (err) {
+            console.log(err);
+        }
     }));
+
+    // Update user ids from characters and speedrun users tables
+    await db.query('UPDATE speedruns SET user_id=(SELECT user_id FROM characters WHERE id=speedruns.character_id) WHERE character_id IS NOT NULL');
+    await db.query('UPDATE speedruns SET user_id=(SELECT user_id FROM speedrun_users WHERE id=speedruns.speedrun_user_id)  WHERE user_id IS NULL');
 
     await db.end();
 }
