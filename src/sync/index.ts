@@ -136,6 +136,7 @@ export async function sync(payload: Payload) {
             user,
             raceId,
             characterId,
+            characterName: payload.Name,
             raceCharacterUpdates: { ...characterUpdates, ...raceCharacterUpdates },
             removeCheckpoints,
             addCheckpoints
