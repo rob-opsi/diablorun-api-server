@@ -133,6 +133,7 @@ export async function sync(payload: Payload) {
     for (const { raceId, raceCharacterUpdates, removeCheckpoints, addCheckpoints } of raceUpdates) {
         await broadcast(`race/${raceId}`, {
             action: 'update_race_character',
+            user,
             raceId,
             characterId,
             raceCharacterUpdates: { ...characterUpdates, ...raceCharacterUpdates },
