@@ -72,6 +72,7 @@ export interface Character {
     disqualified: boolean;
     preliminary: boolean;
     finish_time: number | null;
+    ladder_id: number | null;
 
     // hireling stats
     hireling_name: string | null;
@@ -303,4 +304,11 @@ export interface SpeedrunComRunsResponse {
             uri: string;
         }[];
     }
+}
+
+export interface Ladder {
+    id: number;
+    start_time: number;
+    end_time: number;
+    stat: keyof Character;
 }

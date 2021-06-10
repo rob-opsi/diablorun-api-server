@@ -7,9 +7,7 @@ import { Payload } from './payload';
 import { getCharacterUpdates, saveCharacterUpdates } from './character-updates';
 import { getQuestUpdates, saveQuestUpdates } from './quest-updates';
 import { broadcast } from '../services/ws';
-import { getRacesForCharacterEntry } from '../collections/races';
-import * as sqlFormat from 'pg-format';
-import { getRaceUpdates, saveRaceUpdates } from './race-updates';
+import { getCurrentLadder } from '../collections/ladders';
 
 const [MIN_MAJOR, MIN_MINOR, MIN_PATCH] = (process.env.MIN_DI_VERSION || '0.0.0').split('.').map(i => parseInt(i));
 
@@ -105,6 +103,7 @@ export async function sync(payload: Payload) {
     await saveQuestUpdates(characterId, questUpdates);
     await saveItemUpdates(characterId, itemUpdates);
 
+    /*
     // When a new character is created, join public races where entry conditions are fulfilled
     if (!before && payload.Experience === 0) {
         const races = await getRacesForCharacterEntry(characterUpdates);
@@ -114,10 +113,22 @@ export async function sync(payload: Payload) {
             races.map(race => [race.id, characterId, time, time])
         ));
     }
+    */
+
+    // Join ladder if new character
+    if (payload.NewCharacter && !before) {
+        const ladder = await getCurrentLadder();
+
+        if (ladder) {
+            await db.query('UPDATE characters SET ladder_id=$2 WHERE id=$1', [characterId, ladder.id]);
+        }
+    }
     
+    /*
     // Check race updates
     const raceUpdates = await getRaceUpdates(time, characterId, characterUpdates, questUpdates);
     await saveRaceUpdates(characterId, raceUpdates);
+    */
 
     // Broadcast updates
     await broadcast(`user/${user.name.toLowerCase()}`, {
@@ -127,9 +138,10 @@ export async function sync(payload: Payload) {
         characterUpdates,
         itemUpdates,
         questUpdates,
-        raceUpdates
+        raceUpdates: []
     });
 
+    /*
     for (const { raceId, raceCharacterUpdates, removeCheckpoints, addCheckpoints } of raceUpdates) {
         await broadcast(`race/${raceId}`, {
             action: 'update_race_character',
@@ -142,6 +154,7 @@ export async function sync(payload: Payload) {
             addCheckpoints
         });
     }
+    */
 
     return `https://diablo.run/${user.name}/@`;
 }
