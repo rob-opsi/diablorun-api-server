@@ -21,8 +21,8 @@ export async function getSpeedruns(query: any) {
   let pbRunsFilter = '';
 
   if (filterKeys.length) {
-    runsFilter = `${filterKeys.map((key, i) => `runs.${key}=$${i + 1}`).join(' AND ')}`;
-    pbRunsFilter = `${filterKeys.map((key, i) => `pb_runs.${key}=$${i + 1}`).join(' AND ')}`;
+    runsFilter = filterKeys.map((key, i) => `runs.${key}=$${i + 1}`).join(' AND ');
+    pbRunsFilter = filterKeys.map((key, i) => `pb_runs.${key}=$${i + 1}`).join(' AND ');
   }
 
   // User filter
@@ -32,8 +32,6 @@ export async function getSpeedruns(query: any) {
     filterValues.push(query.user_id);
     userFilter += ` AND runs.user_id=$${filterValues.length}`;
   }
-
-  // Database
   
   // Statistics
   const statistics = await db.query(`
