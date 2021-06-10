@@ -1,13 +1,27 @@
 import { Router } from 'express'
+import { getCurrentLadder } from '../collections/ladders';
 import db from '../services/db'
 
 export const router = Router()
 
 router.get('/ladder', async function (req, res) {
   const query: { limit?: string, offset?: string, d2_mod?: string, hc?: string, hero?: string } = req.query;
-  
+  const ladder = await getCurrentLadder();
+
+  if (!ladder) {
+    res.json({
+      statistics: { users: 0, characters: 0 },
+      rows: [],
+      pagination: {
+        more: false,
+        offset: 0
+      }
+    });
+    return;
+  }
+
   // Statistics
-  const ladderFilter = 'level > 9 AND start_time > 1622494800';
+  const ladderFilter = `ladder_id=${ladder.id} AND level > 9`;
   const statistics = await db.query(`
     SELECT
       COUNT(*)::int AS characters,
