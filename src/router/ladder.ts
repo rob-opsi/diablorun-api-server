@@ -1,12 +1,18 @@
 import { Router } from 'express'
-import { getCurrentLadder } from '../collections/ladders';
+import { getCurrentLadder } from '../collections/ladders'
 import db from '../services/db'
 
 export const router = Router()
 
 router.get('/ladder', async function (req, res) {
-  const query: { limit?: string, offset?: string, d2_mod?: string, hc?: string, hero?: string } = req.query;
-  const ladder = await getCurrentLadder();
+  const query: {
+    limit?: string
+    offset?: string
+    d2_mod?: string
+    hc?: string
+    hero?: string
+  } = req.query
+  const ladder = await getCurrentLadder()
 
   if (!ladder) {
     res.json({
@@ -14,58 +20,61 @@ router.get('/ladder', async function (req, res) {
       rows: [],
       pagination: {
         more: false,
-        offset: 0
-      }
-    });
-    return;
+        offset: 0,
+      },
+    })
+    return
   }
 
   // Statistics
-  const ladderFilter = `ladder_id=${ladder.id} AND level > 9`;
+  const ladderFilter = `ladder_id=${ladder.id} AND experience > 0`
   const statistics = await db.query(`
     SELECT
       COUNT(*)::int AS characters,
       COUNT(DISTINCT user_id)::int AS users
     FROM characters
     WHERE ${ladderFilter}
-  `);
+  `)
 
   // Build filter from query
-  const filterKeys = [];
-  const filterValues = [];
+  const filterKeys = []
+  const filterValues = []
 
   if (query.d2_mod) {
-    filterKeys.push('d2_mod');
-    filterValues.push(query.d2_mod);
+    filterKeys.push('d2_mod')
+    filterValues.push(query.d2_mod)
   }
 
   if (query.hc) {
-    filterKeys.push('hc');
-    filterValues.push(query.hc);
+    filterKeys.push('hc')
+    filterValues.push(query.hc)
   }
 
   if (query.hero) {
-    filterKeys.push('hero');
-    filterValues.push(query.hero);
+    filterKeys.push('hero')
+    filterValues.push(query.hero)
   }
 
   // Global filter
   let charactersFilter = [
     ladderFilter,
-    ...filterKeys.map((key, i) => `characters.${key}=$${i + 1}`)
-  ].join(' AND ');
-  
+    ...filterKeys.map((key, i) => `characters.${key}=$${i + 1}`),
+  ].join(' AND ')
+
   // Pagination
-  const limit = Math.min(30, parseInt(query.limit || '30'));
-  const orderDir = req.query.order_dir === 'ASC' ? 'ASC' : 'DESC';
-  let orderBy = 'experience';
+  const limit = Math.min(30, parseInt(query.limit || '30'))
+  const orderDir = req.query.order_dir === 'ASC' ? 'ASC' : 'DESC'
+  let orderBy = 'experience'
 
   if (query.offset) {
-    filterValues.push(query.offset);
-    charactersFilter += ` AND characters.${orderBy} ${orderDir === 'ASC' ? '>=' : '<='} $${filterValues.length}`;
+    filterValues.push(query.offset)
+    charactersFilter += ` AND characters.${orderBy} ${
+      orderDir === 'ASC' ? '>=' : '<='
+    } $${filterValues.length}`
   }
 
-  const { rows } = await db.query(`
+  const { rows } = await db.query(
+    `
     SELECT
       characters.id, characters.name, characters.hero, characters.level, characters.experience::int,
       characters.hc, characters.start_time, characters.update_time, characters.in_game_time,
@@ -77,14 +86,16 @@ router.get('/ladder', async function (req, res) {
     WHERE ${charactersFilter}
     ORDER BY ${orderBy} ${orderDir}
     LIMIT ${limit + 1}
-  `, filterValues);
+  `,
+    filterValues,
+  )
 
   res.json({
     statistics: statistics.rows[0],
     rows: rows.slice(0, limit),
     pagination: {
       more: rows.length > limit,
-      offset: rows.length ? rows[rows.length - 1][orderBy] : 0
-    }
-  });
-});
+      offset: rows.length ? rows[rows.length - 1][orderBy] : 0,
+    },
+  })
+})
