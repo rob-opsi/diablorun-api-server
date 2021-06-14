@@ -38,7 +38,7 @@ export async function getSpeedruns(query: any) {
     WITH pb_runs AS (
       SELECT
           *,
-          ROW_NUMBER() OVER(PARTITION BY speedrun_user_id, category_id, players_category, hc, hero ORDER BY seconds_played ASC) AS personal_rank
+          ROW_NUMBER() OVER(PARTITION BY COALESCE(speedrun_user_id, user_id::text), category_id, players_category, hc, hero ORDER BY seconds_played ASC) AS personal_rank
       FROM speedruns
     ), runs AS (
       SELECT
@@ -48,11 +48,11 @@ export async function getSpeedruns(query: any) {
       FROM pb_runs WHERE personal_rank=1 ${pbRunsFilter ? 'AND' : ''} ${pbRunsFilter}
     )
     SELECT
-      COUNT(*) AS speedruns,
-      COUNT(DISTINCT speedrun_user_id) AS users,
-      COUNT(*) FILTER(WHERE category_rank=1) AS gold,
-      COUNT(*) FILTER(WHERE category_rank=2) AS silver,
-      COUNT(*) FILTER(WHERE category_rank=3) AS bronze
+      COUNT(*)::int AS speedruns,
+      COUNT(DISTINCT COALESCE(speedrun_user_id, user_id::text))::int AS users,
+      COUNT(*) FILTER(WHERE category_rank=1)::int AS gold,
+      COUNT(*) FILTER(WHERE category_rank=2)::int AS silver,
+      COUNT(*) FILTER(WHERE category_rank=3)::int AS bronze
     FROM runs
     WHERE ${userFilter}
   `, filterValues);
@@ -81,12 +81,12 @@ export async function getSpeedruns(query: any) {
     WITH pb_runs AS (
       SELECT
           *,
-          ROW_NUMBER() OVER(PARTITION BY speedrun_user_id, category_id, players_category, hc, hero ORDER BY seconds_played ASC) AS personal_rank
+          ROW_NUMBER() OVER(PARTITION BY COALESCE(speedrun_user_id, user_id::text), category_id, players_category, hc, hero ORDER BY seconds_played ASC) AS personal_rank
       FROM speedruns
     ), runs AS (
       SELECT
         *,
-        RANK() OVER (PARTITION BY category_id, players_category, hc, hero ORDER BY seconds_played ASC) AS category_rank
+        (RANK() OVER (PARTITION BY category_id, players_category, hc, hero ORDER BY seconds_played ASC))::int AS category_rank
       FROM pb_runs WHERE personal_rank=1
     )
     SELECT
@@ -116,11 +116,11 @@ export async function getSpeedruns(query: any) {
         users.dark_color_from AS user_color,
         characters.name AS character_name,
         
-        RANK() OVER (ORDER BY runs.seconds_played ASC) AS rank,
+        (RANK() OVER (ORDER BY runs.seconds_played ASC))::int AS rank,
         runs.category_rank
     FROM runs
-    INNER JOIN speedrun_users ON runs.speedrun_user_id = speedrun_users.id
     INNER JOIN speedrun_categories ON runs.category_id = speedrun_categories.id
+    LEFT OUTER JOIN speedrun_users ON runs.speedrun_user_id = speedrun_users.id
     LEFT OUTER JOIN users ON runs.user_id = users.id
     LEFT OUTER JOIN characters ON runs.character_id = characters.id
     WHERE ${runsFilter} ${runsFilter ? 'AND' : ''} ${userFilter} ORDER BY runs.${orderBy} ${orderDir}
