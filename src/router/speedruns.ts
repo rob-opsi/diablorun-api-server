@@ -1,24 +1,22 @@
 import { Router } from 'express';
 import { SpeedrunCategory } from 'src/types';
-import { getSpeedrunCategories } from '../collections/speedruns';
+import { getSpeedrunCategories, getSpeedrunCategory } from '../collections/speedruns';
 import db from '../services/db';
 
 export const router = Router();
 
 // Get speedruns
 export async function getSpeedruns(query: any) {
-  // Get categories
-  const categories = await getSpeedrunCategories();
-
   // Build filter from query
   const filterKeys = [];
   const filterValues = [];
-  let filteredCategory: SpeedrunCategory | undefined;
+  let filteredCategory: SpeedrunCategory | null = null;
 
   if (query.category_id) {
     filterKeys.push('category_id');
     filterValues.push(query.category_id);
-    filteredCategory = categories.find(category => category.id === parseInt(query.category_id));
+
+    filteredCategory = await getSpeedrunCategory(query.category_id);
   }
 
   if (query.hc) {
@@ -142,7 +140,6 @@ export async function getSpeedruns(query: any) {
   `, filterValues);
 
   return {
-    categories,
     statistics: statistics.rows[0],
     speedruns: speedruns.rows.slice(0, limit),
     pagination: {
