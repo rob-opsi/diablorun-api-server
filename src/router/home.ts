@@ -28,17 +28,11 @@ router.get('/home', async function (req, res) {
   
           speedrun_categories.name AS category_name,
           
-          speedrun_users.name AS speedrun_user_name,
-          speedrun_users.weblink AS speedrun_user_weblink,
-          speedrun_users.country_code AS speedrun_user_country_code,
-          speedrun_users.light_color_from AS speedrun_user_light_color_from,
-          speedrun_users.light_color_to AS speedrun_user_light_color_to,
-          speedrun_users.dark_color_from AS speedrun_user_dark_color_from,
-          speedrun_users.dark_color_to AS speedrun_user_dark_color_to,
-          
-          users.name AS user_name,
-          users.dark_color_from AS user_color,
           characters.name AS character_name,
+          COALESCE(users.name, speedrun_users.name) AS user_name,
+          COALESCE(users.country_code, speedrun_users.country_code) AS user_country_code,
+          COALESCE(users.dark_color_from, speedrun_users.dark_color_from) AS user_color,
+          speedrun_users.weblink AS speedrun_user_weblink,
           
           (RANK() OVER (ORDER BY runs.seconds_played ASC))::int AS rank,
           runs.category_rank
@@ -78,17 +72,11 @@ router.get('/home', async function (req, res) {
   
           speedrun_categories.name AS category_name,
           
-          speedrun_users.name AS speedrun_user_name,
-          speedrun_users.weblink AS speedrun_user_weblink,
-          speedrun_users.country_code AS speedrun_user_country_code,
-          speedrun_users.light_color_from AS speedrun_user_light_color_from,
-          speedrun_users.light_color_to AS speedrun_user_light_color_to,
-          speedrun_users.dark_color_from AS speedrun_user_dark_color_from,
-          speedrun_users.dark_color_to AS speedrun_user_dark_color_to,
-          
-          users.name AS user_name,
-          users.dark_color_from AS user_color,
           characters.name AS character_name,
+          COALESCE(users.name, speedrun_users.name) AS user_name,
+          COALESCE(users.country_code, speedrun_users.country_code) AS user_country_code,
+          COALESCE(users.dark_color_from, speedrun_users.dark_color_from) AS user_color,
+          speedrun_users.weblink AS speedrun_user_weblink,
           
           (RANK() OVER (ORDER BY runs.seconds_played ASC))::int AS rank,
           runs.category_rank
@@ -124,15 +112,10 @@ router.get('/home', async function (req, res) {
   )
   SELECT
       rankings.*,
-      speedrun_users.name AS speedrun_user_name,
+      COALESCE(users.name, speedrun_users.name) AS user_name,
+      COALESCE(users.country_code, speedrun_users.country_code) AS user_country_code,
+      COALESCE(users.dark_color_from, speedrun_users.dark_color_from) AS user_color,
       speedrun_users.weblink AS speedrun_user_weblink,
-      speedrun_users.country_code AS speedrun_user_country_code,
-      speedrun_users.light_color_from AS speedrun_user_light_color_from,
-      speedrun_users.light_color_to AS speedrun_user_light_color_to,
-      speedrun_users.dark_color_from AS speedrun_user_dark_color_from,
-      speedrun_users.dark_color_to AS speedrun_user_dark_color_to,
-      users.name AS user_name,
-      users.dark_color_from AS user_color,
       (RANK() OVER (ORDER BY gold DESC, silver DESC, bronze DESC))::int
   FROM rankings
   LEFT OUTER JOIN speedrun_users ON rankings.speedrun_user_id = speedrun_users.id

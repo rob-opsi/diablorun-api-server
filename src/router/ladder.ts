@@ -78,6 +78,7 @@ router.get('/ladder', async function (req, res) {
     SELECT
       characters.id, characters.name, characters.hero, characters.level, characters.experience::int,
       characters.hc, characters.start_time, characters.update_time, characters.in_game_time,
+      users.id AS user_id,
       users.name AS user_name,
       users.country_code AS user_country_code,
       users.dark_color_from AS user_color
