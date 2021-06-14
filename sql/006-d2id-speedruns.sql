@@ -20,6 +20,9 @@ CREATE TABLE speedrun_categories (
     name text NOT NULL
 );
 
+ALTER TABLE speedrun_categories ADD precedence integer;
+ALTER TABLE speedrun_categories ADD px_only boolean;
+
 INSERT INTO speedrun_categories VALUES (1, 'Normal'), (2, 'Hell'), (3, 'Pacifist');
 
 CREATE TABLE speedruns (

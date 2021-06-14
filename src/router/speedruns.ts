@@ -1,19 +1,39 @@
 import { Router } from 'express';
+import { SpeedrunCategory } from 'src/types';
+import { getSpeedrunCategories } from '../collections/speedruns';
 import db from '../services/db';
 
 export const router = Router();
 
 // Get speedruns
 export async function getSpeedruns(query: any) {
+  // Get categories
+  const categories = await getSpeedrunCategories();
+
   // Build filter from query
   const filterKeys = [];
   const filterValues = [];
+  let filteredCategory: SpeedrunCategory | undefined;
 
-  for (const key in query) {
-    if (['category_id', 'hc', 'players_category', 'hero'].includes(key)) {
-      filterKeys.push(key);
-      filterValues.push(query[key]);
-    }
+  if (query.category_id) {
+    filterKeys.push('category_id');
+    filterValues.push(query.category_id);
+    filteredCategory = categories.find(category => category.id === parseInt(query.category_id));
+  }
+
+  if (query.hc) {
+    filterKeys.push('hc');
+    filterValues.push(query.hc);
+  }
+
+  if (query.players_category && (!filteredCategory || !filteredCategory.px_only)) {
+    filterKeys.push('players_category');
+    filterValues.push(query.players_category);
+  }
+
+  if (query.hero) {
+    filterKeys.push('hero');
+    filterValues.push(query.hero);
   }
 
   // Global filter
@@ -122,6 +142,7 @@ export async function getSpeedruns(query: any) {
   `, filterValues);
 
   return {
+    categories,
     statistics: statistics.rows[0],
     speedruns: speedruns.rows.slice(0, limit),
     pagination: {
@@ -133,10 +154,8 @@ export async function getSpeedruns(query: any) {
 
 // Get speedrun categories
 router.get('/categories', async function (req, res) {
-    const categories = await db.query(`
-    SELECT * FROM speedrun_categories
-  `);
-  res.json(categories.rows);
+  const categories = await getSpeedrunCategories();
+  res.json(categories);
 });
 
 router.get('/speedruns', async function (req, res) {

@@ -176,6 +176,15 @@ export interface RaceCharacterCheckpoint {
     points: number;
 }
 
+export interface SpeedrunCategory {
+    id: number;
+    name: string;
+    description: string | null;
+    image_url: string | null;
+    precedence: number;
+    px_only: boolean;
+}
+
 export interface Speedrun {
     run_time: number;
     submit_time: number;
