@@ -78,7 +78,15 @@ async function run() {
 
     // Update user ids from characters and speedrun users tables
     await db.query('UPDATE speedruns SET user_id=(SELECT user_id FROM characters WHERE id=speedruns.character_id) WHERE character_id IS NOT NULL');
-    await db.query('UPDATE speedruns SET user_id=(SELECT user_id FROM speedrun_users WHERE id=speedruns.speedrun_user_id)  WHERE user_id IS NULL');
+    await db.query('UPDATE speedruns SET user_id=(SELECT user_id FROM speedrun_users WHERE id=speedruns.speedrun_user_id) WHERE user_id IS NULL');
+
+    // Update user profiles based on speedrun users table
+    await db.query('UPDATE users SET country_code=(SELECT country_code FROM speedrun_users WHERE user_id=users.id) WHERE country_code IS NULL');
+    await db.query('UPDATE users SET dark_color_from=(SELECT dark_color_from FROM speedrun_users WHERE user_id=users.id) WHERE dark_color_from IS NULL');
+    await db.query('UPDATE users SET dark_color_to=(SELECT dark_color_to FROM speedrun_users WHERE user_id=users.id) WHERE dark_color_to IS NULL');
+    await db.query('UPDATE users SET light_color_from=(SELECT light_color_from FROM speedrun_users WHERE user_id=users.id) WHERE light_color_from IS NULL');
+    await db.query('UPDATE users SET light_color_to=(SELECT light_color_to FROM speedrun_users WHERE user_id=users.id) WHERE light_color_to IS NULL');
+
 
     await db.end();
 }
