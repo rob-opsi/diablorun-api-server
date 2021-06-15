@@ -4,9 +4,11 @@ import { sync } from '../sync';
 export const router = Router();
 
 router.post('/sync', async function (req, res) {
+    console.log('hello?');
+    
     try {
         if (process.env.NODE_ENV === 'development') {
-            console.log(req.body);
+            console.log(JSON.stringify(req.body, null, 2));
         }
         
         res.send(await sync(req.body));

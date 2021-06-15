@@ -124,7 +124,7 @@ export function getItemUpdates(time: number, payload: Payload, inventoryTab: num
         const slot = getItemSlot(container, inventoryTab, itemPayload.Location.BodyLocation);
         const x = itemPayload.Location.X;
         const y = itemPayload.Location.Y;
-        const item_hash = hash32(item_id + item_class + name + quality + properties + container + (slot ? slot : ('' + x + y)));
+        const item_hash = hash32(item_class + name + quality + properties + container + (slot ? slot : ('' + x + y)));
 
         const itemBeforeByHash = itemsBeforeByHash[item_hash];
 
