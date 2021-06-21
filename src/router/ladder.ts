@@ -76,7 +76,7 @@ router.get('/ladder', async function (req, res) {
   const { rows } = await db.query(
     `
     SELECT
-      characters.id, characters.name, characters.hero, characters.level, characters.experience::int,
+      characters.id, characters.name, characters.hero, characters.level, characters.experience,
       characters.hc, characters.start_time, characters.update_time, characters.in_game_time,
       users.id AS user_id,
       users.name AS user_name,
@@ -93,7 +93,7 @@ router.get('/ladder', async function (req, res) {
 
   res.json({
     statistics: statistics.rows[0],
-    rows: rows.slice(0, limit),
+    rows: rows.slice(0, limit).map(row => ({ ...row, experience: Number(row.experience) })),
     pagination: {
       more: rows.length > limit,
       offset: rows.length ? rows[rows.length - 1][orderBy] : 0,
