@@ -49,7 +49,7 @@ router.get('/home', async function (req, res) {
     WITH pb_runs AS (
         SELECT
             *,
-            (ROW_NUMBER() OVER(PARTITION BY COALESCE(speedrun_user_id, user_id::text), category_id, players_category, hc, hero ORDER BY seconds_played ASC))::int AS personal_rank
+            (ROW_NUMBER() OVER(PARTITION BY COALESCE(user_id::text, speedrun_user_id), category_id, players_category, hc, hero ORDER BY seconds_played ASC))::int AS personal_rank
         FROM speedruns
       ), runs AS (
         SELECT
@@ -93,7 +93,7 @@ router.get('/home', async function (req, res) {
     WITH pb_runs AS (
       SELECT
           *,
-          (ROW_NUMBER() OVER(PARTITION BY COALESCE(speedrun_user_id, user_id::text), category_id, players_category, hc, hero ORDER BY seconds_played ASC))::int AS personal_rank
+          (ROW_NUMBER() OVER(PARTITION BY COALESCE(user_id::text, speedrun_user_id), category_id, players_category, hc, hero ORDER BY seconds_played ASC))::int AS personal_rank
       FROM speedruns
   ), runs AS (
       SELECT
@@ -102,13 +102,13 @@ router.get('/home', async function (req, res) {
       FROM pb_runs WHERE personal_rank=1
   ), rankings AS (
       SELECT
-          runs.speedrun_user_id,
+          MAX(runs.speedrun_user_id) AS speedrun_user_id,
           MAX(runs.user_id) AS user_id,
           (COUNT(*) FILTER(WHERE category_rank=1))::int AS gold,
           (COUNT(*) FILTER(WHERE category_rank=2))::int AS silver,
           (COUNT(*) FILTER(WHERE category_rank=3))::int AS bronze
       FROM runs
-      GROUP BY speedrun_user_id ORDER BY gold DESC, silver DESC, bronze DESC
+      GROUP BY COALESCE(user_id::text, speedrun_user_id) ORDER BY gold DESC, silver DESC, bronze DESC
   )
   SELECT
       rankings.*,
