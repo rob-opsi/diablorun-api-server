@@ -324,11 +324,24 @@ export interface Ladder {
 
 export interface Bounty {
     id: number;
-    author_user_id: number | null;
     name: string;
     description: string;
     reward: string | null;
     prepaid: boolean | null;
     expiration: number | null;
-    claimed_character_id: number | null;
+    
+    author_user: User;
+
+    claimed_character: {
+        id: Character["id"];
+        name: Character["name"];
+        hero: Character["hero"];
+        hc: Character["hc"];
+  
+        user_id: User["id"];
+        user_name: User["name"];
+        user_country_code: User["country_code"];
+        user_color: User["color"];
+        user_profile_image_url: User["profile_image_url"];
+    } | null
 }
