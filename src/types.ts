@@ -321,3 +321,14 @@ export interface Ladder {
     end_time: number;
     stat: keyof Character;
 }
+
+export interface Bounty {
+    id: number;
+    author_user_id: number | null;
+    name: string;
+    description: string;
+    reward: string | null;
+    prepaid: boolean | null;
+    expiration: number | null;
+    claimed_character_id: number | null;
+}
