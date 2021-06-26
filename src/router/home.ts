@@ -86,7 +86,7 @@ router.get('/home', async function (req, res) {
       LEFT OUTER JOIN users ON runs.user_id = users.id
       LEFT OUTER JOIN characters ON runs.character_id = characters.id
       WHERE runs.category_rank=1 ORDER BY runs.run_time DESC
-      LIMIT 10
+      LIMIT 15
     `);
   
   const mostMedals = await db.query(`
@@ -121,7 +121,7 @@ router.get('/home', async function (req, res) {
   LEFT OUTER JOIN speedrun_users ON rankings.speedrun_user_id = speedrun_users.id
   LEFT OUTER JOIN users ON rankings.user_id = users.id
   WHERE (gold + silver + bronze) > 0
-  LIMIT 10
+  LIMIT 15
   `);
   
   res.json({
