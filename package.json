@@ -46,7 +46,7 @@
     "farmhash": "^3.2.0",
     "millify": "^3.3.0",
     "moment": "^2.29.1",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.7",
     "pg": "^8.4.0",
     "pg-format": "^1.0.4",
     "shortid": "^2.2.15",
